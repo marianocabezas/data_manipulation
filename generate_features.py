@@ -65,7 +65,6 @@ def main():
         mask_nii = load_nii(os.path.join(patient_folder, options.mask))
         mask_img = mask_nii.get_data()
         lesion_centers = get_mask_voxels(mask_img)
-        get_patches(mask_img, lesion_centers, options.patch_size)
 
         if options.use_flair:
             flair_patches = get_patches_from_name(os.path.join(patient_folder, options.flair),
