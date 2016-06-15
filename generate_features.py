@@ -23,31 +23,31 @@ def main():
                       action='store', type='int', nargs=3,
                       dest='patch_size', default=(15, 15, 15))
     parser.add_option('--use-gado',
-                      action='store_true', dest='use_gado', default=False)
+                      action='store_true', dest='use_gado')
     parser.add_option('--no-gado',
                       action='store_false', dest='use_gado', default=False)
     parser.add_option('--gado',
                       action='store', dest='gado', type='string', default='GADO_preprocessed.nii.gz')
     parser.add_option('--use-flair',
-                      action='store_true', dest='use_flair', default=True)
+                      action='store_true', dest='use_flair')
     parser.add_option('--no-flair',
                       action='store_false', dest='use_flair', default=True)
     parser.add_option('--flair',
                       action='store', dest='flair', type='string', default='FLAIR_preprocessed.nii.gz')
     parser.add_option('--use-pd',
-                      action='store_true', dest='use_pd', default=True)
+                      action='store_true', dest='use_pd')
     parser.add_option('--no-pd',
                       action='store_false', dest='use_pd', default=True)
     parser.add_option('--pd',
                       action='store', dest='pd', type='string', default='DP_preprocessed.nii.gz')
     parser.add_option('--use-t2',
-                      action='store_true', dest='use_t2', default=True)
+                      action='store_true', dest='use_t2')
     parser.add_option('--no-t2',
                       action='store_false', dest='use_t2', default=True)
     parser.add_option('--t2',
                       action='store', dest='t2', type='string', default='T2_preprocessed.nii.gz')
     parser.add_option('--use-t1',
-                      action='store_true', dest='use_t1', default=True)
+                      action='store_true', dest='use_t1')
     parser.add_option('--no-t1',
                       action='store_false', dest='use_t1', default=True)
     parser.add_option('--t1',
@@ -66,45 +66,50 @@ def main():
         mask_img = mask_nii.get_data()
         lesion_centers = get_mask_voxels(mask_img)
 
-        flair = []
-        pd = []
-        t1 = []
-        t2 = []
-        gado = []
+        flair = None
+        pd = None
+        t1 = None
+        t2 = None
+        gado = None
 
         if options.use_flair:
-            flair = get_patches_from_name(os.path.join(patient_folder, options.flair),
-                                          lesion_centers,
-                                          options.patch_size
-                                          )
+            flair = np.array(get_patches_from_name(os.path.join(patient_folder, options.flair),
+                                                   lesion_centers,
+                                                   options.patch_size
+                                                   )
+                             )
 
         if options.use_pd:
-            pd = get_patches_from_name(os.path.join(patient_folder, options.pd),
-                                       lesion_centers,
-                                       options.patch_size
-                                       )
+            pd = np.array(get_patches_from_name(os.path.join(patient_folder, options.pd),
+                                                lesion_centers,
+                                                options.patch_size
+                                                )
+                          )
 
         if options.use_t1:
-            t1 = get_patches_from_name(os.path.join(patient_folder, options.t1),
-                                       lesion_centers,
-                                       options.patch_size
-                                       )
+            t1 = np.array(get_patches_from_name(os.path.join(patient_folder, options.t1),
+                                                lesion_centers,
+                                                options.patch_size
+                                                )
+                          )
 
         if options.use_t2:
-            t2 = get_patches_from_name(os.path.join(patient_folder, options.t2),
-                                       lesion_centers,
-                                       options.patch_size
-                                       )
+            t2 = np.array(get_patches_from_name(os.path.join(patient_folder, options.t2),
+                                                lesion_centers,
+                                                options.patch_size
+                                                )
+                          )
 
         if options.use_gado:
-            gado = get_patches_from_name(os.path.join(patient_folder, options.flair),
-                                         lesion_centers,
-                                         options.patch_size
-                                         )
+            gado = np.array(get_patches_from_name(os.path.join(patient_folder, options.flair),
+                                                  lesion_centers,
+                                                  options.patch_size
+                                                  )
+                            )
 
-        patches = np.stack([data for data in [flair, pd, t2, gado, t1] if data is not None])
+        patches = np.stack([data for data in [flair, pd, t2, gado, t1] if data is not None], axis=1)
 
-        print 'Our final vector\'s size = (' ','.join([str(num) for num in patches.shape]) + ')'
+        print 'Our final vector\'s size = (' + ','.join([str(num) for num in patches.shape]) + ')'
 
 
 def get_patches_from_name(filename, centers, patch_size):
