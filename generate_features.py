@@ -66,35 +66,45 @@ def main():
         mask_img = mask_nii.get_data()
         lesion_centers = get_mask_voxels(mask_img)
 
+        flair = []
+        pd = []
+        t1 = []
+        t2 = []
+        gado = []
+
         if options.use_flair:
-            flair_patches = get_patches_from_name(os.path.join(patient_folder, options.flair),
-                                                  lesion_centers,
-                                                  options.patch_size
-                                                  )
+            flair = get_patches_from_name(os.path.join(patient_folder, options.flair),
+                                          lesion_centers,
+                                          options.patch_size
+                                          )
 
         if options.use_pd:
-            pd_patches = get_patches_from_name(os.path.join(patient_folder, options.pd),
-                                               lesion_centers,
-                                               options.patch_size
-                                               )
+            pd = get_patches_from_name(os.path.join(patient_folder, options.pd),
+                                       lesion_centers,
+                                       options.patch_size
+                                       )
 
         if options.use_t1:
-            t1_patches = get_patches_from_name(os.path.join(patient_folder, options.t1),
-                                               lesion_centers,
-                                               options.patch_size
-                                               )
+            t1 = get_patches_from_name(os.path.join(patient_folder, options.t1),
+                                       lesion_centers,
+                                       options.patch_size
+                                       )
 
         if options.use_t2:
-            t2_patches = get_patches_from_name(os.path.join(patient_folder, options.t2),
-                                               lesion_centers,
-                                               options.patch_size
-                                               )
+            t2 = get_patches_from_name(os.path.join(patient_folder, options.t2),
+                                       lesion_centers,
+                                       options.patch_size
+                                       )
 
         if options.use_gado:
-            flair_patches = get_patches_from_name(os.path.join(patient_folder, options.flair),
-                                                  lesion_centers,
-                                                  options.patch_size
-                                                  )
+            gado = get_patches_from_name(os.path.join(patient_folder, options.flair),
+                                         lesion_centers,
+                                         options.patch_size
+                                         )
+
+        patches = np.stack([data for data in [flair, pd, t2, gado, t1] if data is not None])
+
+        print 'Our final vector\'s size = (' ','.join([str(num) for num in patches.shape]) + ')'
 
 
 def get_patches_from_name(filename, centers, patch_size):
@@ -121,15 +131,15 @@ def get_patches(image, centers, patch_size):
     
     
 def get_mask_voxels(mask):
-    indices = np.stack(np.nonzero(mask>0), axis=1)
+    indices = np.stack(np.nonzero(mask), axis=1)
     indices = [tuple(idx) for idx in indices]
     return indices
 
 
 def get_mask_centers(mask):
     labels, nlabels = label(mask)
-    all_labels = range(1,nlabels+1)
-    centers = [tuple(map(int_round,center)) for center in center_of_mass(mask, labels, all_labels)]
+    all_labels = range(1, nlabels+1)
+    centers = [tuple(map(int_round, center)) for center in center_of_mass(mask, labels, all_labels)]
     return centers
 
 
