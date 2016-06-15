@@ -11,7 +11,7 @@ from operator import add
 
 
 def main():
-    # parse command line options
+    # Parse command line options
     usage = "usage: %prog [options] arg"
     parser = OptionParser(usage)
     parser.add_option('-f', '--folder', dest='folder',
