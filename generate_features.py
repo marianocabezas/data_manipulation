@@ -8,6 +8,7 @@ from scipy.ndimage import center_of_mass
 from optparse import OptionParser
 import numpy as np
 from operator import add
+from itertools import combinations
 from information_theory import mutual_information as mi
 
 
@@ -78,6 +79,8 @@ def main():
                                           lesion_centers,
                                           options.patch_size
                                           )
+            flair_mi = [mi(flair[:max(i,0)] + flair[i+1:]) for i in range(0,len(flair))]
+            print flair_mi
 
         if options.use_pd:
             pd = get_patches_from_name(os.path.join(patient_folder, options.pd),
