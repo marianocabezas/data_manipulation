@@ -1,6 +1,6 @@
 from scipy.stats import entropy
 import numpy as np
-from numpy import histogramdd
+from numpy import histogramdd, histogram
 from itertools import chain, combinations
 
 
@@ -26,3 +26,10 @@ def mutual_information(images):
     histograms_non0 = [(h[np.nonzero(h)], s) for h, s in histograms_norm]
     entropies = [-((-1) ** ((nimages - s) % 2)) * entropy(h) for h, s in histograms_non0]
     return np.stack(entropies).sum()
+
+
+def entropies(images):
+    # Images should be a list of numpy arrays.
+    histograms = [histogram(image.reshape(-1), bins=256) for image in images]
+    entropies = [entropy(h[np.nonzero(h)]) for h, s in histograms]
+    return entropies
