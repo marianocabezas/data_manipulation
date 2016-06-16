@@ -4,7 +4,7 @@ from numpy import histogramdd, histogram
 from itertools import chain, combinations
 
 
-def mutual_information(images):
+def mutual_information(images, bins=256):
     # Images should be a list of numpy arrays.
 
     # In order to compute the mutual information, we will need to compute the
@@ -21,15 +21,21 @@ def mutual_information(images):
     # the histogram (joint in multidimensional cases)
     images_vec = [image.reshape(-1) for image in images]
     np_images = np.stack(images_vec, axis=1)
-    histograms = [histogramdd(np_images[:, c], bins=128) for c in image_comb]
+    histograms = [histogramdd(np_images[:, c], bins=bins) for c in image_comb]
     histograms_norm = [(h.reshape(-1) / h.astype(np.float32).sum(), len(h.shape)) for h, e in histograms]
     histograms_non0 = [(h[np.nonzero(h)], s) for h, s in histograms_norm]
-    entropies = [-((-1) ** ((nimages - s) % 2)) * entropy(h) for h, s in histograms_non0]
-    return np.stack(entropies).sum()
+    informations = [-((-1) ** ((nimages - s) % 2)) * entropy(h) for h, s in histograms_non0]
+    return np.stack(informations).sum()
 
 
-def entropies(images):
+def entropies(images, bins=256):
     # Images should be a list of numpy arrays.
-    histograms = [histogram(image.reshape(-1), bins=256) for image in images]
-    entropies = [entropy(h[np.nonzero(h)]) for h, s in histograms]
-    return entropies
+    histograms = [histogram(image.reshape(-1), bins=bins) for image in images]
+    return [entropy(h[np.nonzero(h)] / h.sum()) for h, s in histograms]
+
+
+def joint_entropy(images, bins=256):
+    # Images should be a list of numpy arrays.
+    np_images = np.stack([image.reshape(-1) for image in images], axis=1)
+    h, s = histogramdd(np_images, bins=bins)
+    return entropy(h[np.nonzero(h)] / h.sum())

@@ -1,14 +1,13 @@
 #!/usr/bin/env python2.7
 import os
+# from numpy import nditer
+# from numpy import array as nparray
 from nibabel import load as load_nii
 from scipy.ndimage import label
 from scipy.ndimage import center_of_mass
 from optparse import OptionParser
 import numpy as np
 from operator import add
-#from itertools import combinations
-from information_theory import entropies
-
 
 def main():
     # Parse command line options
@@ -77,7 +76,6 @@ def main():
                                           lesion_centers,
                                           options.patch_size
                                           )
-            flair_e = entropies(flair)
 
         if options.use_pd:
             pd = get_patches_from_name(os.path.join(patient_folder, options.pd),
