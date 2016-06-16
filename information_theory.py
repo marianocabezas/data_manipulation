@@ -10,13 +10,11 @@ def mutual_information(images):
     # In order to compute the mutual information, we will need to compute the
     # entropies for each subset of the images as described ion (Bell 2003)
     # Thus, we create an iterable with all the possible combinations.
-    # The next operation is used to exclude the empy set.
     nimages = len(images)
     im_idx = range(0, nimages)
-    power_range = range(0, nimages+1)
+    power_range = range(1, nimages+1)
     image_comb_iter = [combinations(im_idx, power) for power in power_range]
     image_comb = chain.from_iterable(image_comb_iter)
-    image_comb.next()
 
     # For convenience, is also better if we vectorise the images and stack
     # them in a single numpy array. This simplifies the process of computing

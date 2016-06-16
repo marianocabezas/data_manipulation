@@ -8,6 +8,7 @@ from scipy.ndimage import center_of_mass
 from optparse import OptionParser
 import numpy as np
 from operator import add
+from information_theory import mutual_information as mi
 
 
 def main():
@@ -73,41 +74,36 @@ def main():
         gado = None
 
         if options.use_flair:
-            flair = np.array(get_patches_from_name(os.path.join(patient_folder, options.flair),
-                                                   lesion_centers,
-                                                   options.patch_size
-                                                   )
-                             )
+            flair = get_patches_from_name(os.path.join(patient_folder, options.flair),
+                                          lesion_centers,
+                                          options.patch_size
+                                          )
 
         if options.use_pd:
-            pd = np.array(get_patches_from_name(os.path.join(patient_folder, options.pd),
-                                                lesion_centers,
-                                                options.patch_size
-                                                )
-                          )
+            pd = get_patches_from_name(os.path.join(patient_folder, options.pd),
+                                       lesion_centers,
+                                       options.patch_size
+                                       )
 
         if options.use_t1:
-            t1 = np.array(get_patches_from_name(os.path.join(patient_folder, options.t1),
-                                                lesion_centers,
-                                                options.patch_size
-                                                )
-                          )
+            t1 = get_patches_from_name(os.path.join(patient_folder, options.t1),
+                                       lesion_centers,
+                                       options.patch_size
+                                       )
 
         if options.use_t2:
-            t2 = np.array(get_patches_from_name(os.path.join(patient_folder, options.t2),
-                                                lesion_centers,
-                                                options.patch_size
-                                                )
-                          )
+            t2 = get_patches_from_name(os.path.join(patient_folder, options.t2),
+                                       lesion_centers,
+                                       options.patch_size
+                                       )
 
         if options.use_gado:
-            gado = np.array(get_patches_from_name(os.path.join(patient_folder, options.flair),
-                                                  lesion_centers,
-                                                  options.patch_size
-                                                  )
-                            )
+            gado = get_patches_from_name(os.path.join(patient_folder, options.flair),
+                                         lesion_centers,
+                                         options.patch_size
+                                         )
 
-        patches = np.stack([data for data in [flair, pd, t2, gado, t1] if data is not None], axis=1)
+        patches = np.stack([np.array(data) for data in [flair, pd, t2, gado, t1] if data is not None], axis=1)
 
         print 'Our final vector\'s size = (' + ','.join([str(num) for num in patches.shape]) + ')'
 
