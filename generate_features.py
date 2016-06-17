@@ -8,6 +8,8 @@ from scipy.ndimage import center_of_mass
 from optparse import OptionParser
 import numpy as np
 from operator import add
+import multiprocessing
+
 
 def main():
     # Parse command line options
@@ -112,7 +114,7 @@ def get_patches_from_name(filename, centers, patch_size):
     return patches
 
 
-def get_patches(image, centers, patch_size):
+def get_patches(image, centers, patch_size=(15, 15, 15)):
     patches = []
     list_of_tuples = all([isinstance(center, tuple) for center in centers])
     sizes_match = [len(center) == len(patch_size) for center in centers]
