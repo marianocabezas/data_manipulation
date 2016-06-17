@@ -1,14 +1,11 @@
 #!/usr/bin/env python2.7
 import os
-# from numpy import nditer
-# from numpy import array as nparray
 from nibabel import load as load_nii
 from scipy.ndimage import label
 from scipy.ndimage import center_of_mass
 from optparse import OptionParser
 import numpy as np
 from operator import add
-import multiprocessing
 
 
 def main():
