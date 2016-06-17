@@ -126,7 +126,7 @@ def get_patches(image, centers, patch_size=(15, 15, 15)):
         ]
         patches = [new_image[idx] for idx in slices]
     return patches
-    
+
     
 def get_mask_voxels(mask):
     indices = np.stack(np.nonzero(mask), axis=1)
