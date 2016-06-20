@@ -112,16 +112,18 @@ def get_patches_from_name(filename, centers, patch_size):
 
 
 def get_patches(image, centers, patch_size=(15, 15, 15)):
+    # If the size has even numbers, the patch will be centered. If not, it will try to create an square almost centered.
+    # By doing this we allow pooling when using encoders/unets.
     patches = []
     list_of_tuples = all([isinstance(center, tuple) for center in centers])
     sizes_match = [len(center) == len(patch_size) for center in centers]
     if list_of_tuples and sizes_match:
         patch_half = tuple([idx/2 for idx in patch_size])
         new_centers = [map(add, center, patch_half) for center in centers]
-        padding = tuple((idx, idx) for idx in patch_half)
+        padding = tuple((idx, size-idx-1) for idx, size in zip(patch_half, patch_size))
         new_image = np.pad(image, padding, mode='constant', constant_values=0)
         slices = [
-            [slice(c_idx-p_idx, c_idx+p_idx+1) for (c_idx, p_idx) in zip(center, patch_half)]
+            [slice(c_idx-p_idx, c_idx+(s_idx-p_idx-1)) for (c_idx, p_idx, s_idx) in zip(center, patch_half, patch_size)]
             for center in new_centers
         ]
         patches = [new_image[idx] for idx in slices]
