@@ -120,10 +120,10 @@ def get_patches(image, centers, patch_size=(15, 15, 15)):
     if list_of_tuples and sizes_match:
         patch_half = tuple([idx/2 for idx in patch_size])
         new_centers = [map(add, center, patch_half) for center in centers]
-        padding = tuple((idx, size-idx-1) for idx, size in zip(patch_half, patch_size))
+        padding = tuple((idx, size-idx) for idx, size in zip(patch_half, patch_size))
         new_image = np.pad(image, padding, mode='constant', constant_values=0)
         slices = [
-            [slice(c_idx-p_idx, c_idx+(s_idx-p_idx-1)) for (c_idx, p_idx, s_idx) in zip(center, patch_half, patch_size)]
+            [slice(c_idx-p_idx, c_idx+(s_idx-p_idx)) for (c_idx, p_idx, s_idx) in zip(center, patch_half, patch_size)]
             for center in new_centers
         ]
         patches = [new_image[idx] for idx in slices]
