@@ -36,12 +36,12 @@ def false_negative_seg(target, estimated):
 
 
 def tp_fraction_seg(target, estimated):
-    return (true_positive_seg(target, estimated) / np.sum(as_logical(target))) * 100
+    return 100 * true_positive_seg(target, estimated) / np.sum(as_logical(target))
 
 
 def fp_fraction_seg(target, estimated):
-    return (false_positive_seg(target, estimated) / np.sum(as_logical(estimated))) * 100
+    return 100.0 * false_positive_seg(target, estimated) / np.sum(as_logical(estimated))
 
 
 def dsc_seg(target, estimated):
-    return 2 * true_positive_seg(target, estimated) / np.sum(np.sum(as_logical(target)) + np.sum(as_logical(estimated)))
+    return 2.0 * true_positive_seg(target, estimated) / np.sum(np.sum(as_logical(target)) + np.sum(as_logical(estimated)))
