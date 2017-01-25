@@ -53,7 +53,8 @@ def false_negative_seg(target, estimated):
 
 
 def tp_fraction_seg(target, estimated):
-    return 100.0 * true_positive_seg(target, estimated) / np.sum(as_logical(target))
+    return 100.0 * true_positive_seg(target, estimated) / np.sum(as_logical(target)) \
+        if np.sum(as_logical(target)) > 0 else 0
 
 
 def tp_fraction_det(target, estimated):
