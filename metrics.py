@@ -91,3 +91,14 @@ def average_surface_distance(target, estimated, spacing=[1, 1, 3]):
     distances = np.concatenate([distances_a, distances_b])
     return np.mean(distances)
 
+
+def hausdorff_distance(target, estimated, spacing=[1, 1, 1]):
+    a = as_logical(target)
+    b = as_logical(estimated)
+    a_bound = np.stack(np.where(np.logical_and(a, np.logical_not(imerode(a)))), axis=1) * spacing
+    b_bound = np.stack(np.where(np.logical_and(b, np.logical_not(imerode(b)))), axis=1) * spacing
+    nbrs_a = NearestNeighbors(n_neighbors=1, algorithm='kd_tree').fit(a_bound)
+    nbrs_b = NearestNeighbors(n_neighbors=1, algorithm='kd_tree').fit(b_bound)
+    distances_a, _ = nbrs_a.kneighbors(b_bound)
+    distances_b, _ = nbrs_b.kneighbors(a_bound)
+    return np.max([np.max(distances_a), np.max(distances_b)])
