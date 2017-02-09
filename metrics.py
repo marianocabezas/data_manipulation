@@ -14,6 +14,14 @@ def as_logical(mask):
     return np.array(mask).astype(dtype=np.bool)
 
 
+def num_regions(mask):
+    return np.max(bwlabeln(as_logical(mask)))
+
+
+def num_voxels(mask):
+    return np.sum(as_logical(mask))
+
+
 def true_positive_seg(target, estimated):
     a = as_logical(target)
     b = as_logical(estimated)
