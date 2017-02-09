@@ -70,11 +70,14 @@ def tp_fraction_det(target, estimated):
 
 
 def fp_fraction_seg(target, estimated):
-    return 100.0 * false_positive_seg(target, estimated) / np.sum(as_logical(estimated))
+    b = num_voxels(estimated)
+    fpf = 100.0 * false_positive_seg(target, estimated) / b if b > 0 else 0.0
+    return fpf
 
 
 def fp_fraction_det(target, estimated):
-    return 100.0 * false_positive_det(target, estimated) / np.max(bwlabeln(as_logical(estimated)))
+    b = np.max(bwlabeln(as_logical(estimated)))
+    return 100.0 * false_positive_det(target, estimated) / b if b > 0 else 0.0
 
 
 def dsc_seg(target, estimated):
