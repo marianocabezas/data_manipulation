@@ -87,26 +87,23 @@ def dsc_det(target, estimated):
     return 2.0 * true_positive_det(target, estimated) / a_plus_b
 
 
-def average_surface_distance(target, estimated, spacing=[1, 1, 3]):
+def surface_distance(target, estimated, spacing=[1, 1, 3]):
     a = as_logical(target)
     b = as_logical(estimated)
     a_bound = np.stack(np.where(np.logical_and(a, np.logical_not(imerode(a)))), axis=1) * spacing
     b_bound = np.stack(np.where(np.logical_and(b, np.logical_not(imerode(b)))), axis=1) * spacing
-    nbrs_a = NearestNeighbors(n_neighbors=1, algorithm='kd_tree').fit(a_bound)
-    nbrs_b = NearestNeighbors(n_neighbors=1, algorithm='kd_tree').fit(b_bound)
-    distances_a, _ = nbrs_a.kneighbors(b_bound)
-    distances_b, _ = nbrs_b.kneighbors(a_bound)
-    distances = np.concatenate([distances_a, distances_b])
+    nbrs_a = NearestNeighbors(n_neighbors=1, algorithm='kd_tree').fit(a_bound) if a_bound.size > 0 else None
+    nbrs_b = NearestNeighbors(n_neighbors=1, algorithm='kd_tree').fit(b_bound) if b_bound.size > 0 else None
+    distances_a, _ = nbrs_a.kneighbors(b_bound) if nbrs_a else np.inf
+    distances_b, _ = nbrs_b.kneighbors(a_bound) if nbrs_b else np.inf
+    return [distances_a, distances_b]
+
+
+def average_surface_distance(target, estimated, spacing):
+    distances = np.concatenate(surface_distance(target, estimated, spacing))
     return np.mean(distances)
 
 
-def hausdorff_distance(target, estimated, spacing=[1, 1, 1]):
-    a = as_logical(target)
-    b = as_logical(estimated)
-    a_bound = np.stack(np.where(np.logical_and(a, np.logical_not(imerode(a)))), axis=1) * spacing
-    b_bound = np.stack(np.where(np.logical_and(b, np.logical_not(imerode(b)))), axis=1) * spacing
-    nbrs_a = NearestNeighbors(n_neighbors=1, algorithm='kd_tree').fit(a_bound)
-    nbrs_b = NearestNeighbors(n_neighbors=1, algorithm='kd_tree').fit(b_bound)
-    distances_a, _ = nbrs_a.kneighbors(b_bound)
-    distances_b, _ = nbrs_b.kneighbors(a_bound)
-    return np.max([np.max(distances_a), np.max(distances_b)])
+def hausdorff_distance(target, estimated, spacing):
+    distances = surface_distance(target, estimated, spacing)
+    return np.max([np.max(distances[0]), np.max(distances[1])])
