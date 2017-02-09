@@ -96,6 +96,8 @@ def surface_distance(target, estimated, spacing=[1, 1, 3]):
     nbrs_b = NearestNeighbors(n_neighbors=1, algorithm='kd_tree').fit(b_bound) if b_bound.size > 0 else None
     distances_a, _ = nbrs_a.kneighbors(b_bound) if nbrs_a and b_bound.size > 0 else np.inf, None
     distances_b, _ = nbrs_b.kneighbors(a_bound) if nbrs_b and a_bound.size > 0 else np.inf, None
+    print(distances_a.shape)
+    print(distances_b.shape)
     return [distances_a, distances_b]
 
 
