@@ -167,13 +167,14 @@ def main():
                 gt_d = num_regions(gt)
                 lesion_s = num_voxels(lesion)
                 gt_s = num_voxels(gt)
-                if args.folder:
+                pdsc = probabilistic_dsc_seg(gt, lesion)
+                if f:
                     measures = (gt_name, name, dist, tpfv, fpfv, dscv, tpfl, fpfl, dscl, tp, gt_d, lesion_s, gt_s)
                     f.write('%s;%s;%f;%f;%f;%f;%f;%f;%f;%d;%d;%d;%d\n' % measures)
                 else:
-                    measures = (dist, tpfv, fpfv, dscv, tpfl, fpfl, dscl, tp, gt_d, lesion_s, gt_s)
-                    print('SurfDist TPFV FPFV DSCV TPFL FPFL DSCL TPL GTL Voxels GTV')
-                    print('%f %f %f %f %f %f %f %d %d %d %d' % measures)
+                    measures = (dist, tpfv, fpfv, dscv, tpfl, fpfl, dscl, tp, gt_d, lesion_s, gt_s, pdsc)
+                    print('SurfDist TPFV FPFV DSCV TPFL FPFL DSCL TPL GTL Voxels GTV PrDSC')
+                    print('%f %f %f %f %f %f %f %d %d %d %d %f' % measures)
 
 
 if __name__ == '__main__':
