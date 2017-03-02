@@ -117,6 +117,11 @@ def hausdorff_distance(target, estimated, spacing):
     return np.max([np.max(distances[0]), np.max(distances[1])])
 
 
+def modified_hausdorff_distance(target, estimated, spacing):
+    distances = surface_distance(target, estimated, spacing)
+    return np.max([np.mean(distances[0]), np.mean(distances[1])])
+
+
 def main():
     @contextlib.contextmanager
     def dummy_file():
