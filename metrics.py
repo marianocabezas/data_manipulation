@@ -95,16 +95,29 @@ def dsc_det(target, estimated):
     return 2.0 * true_positive_det(target, estimated) / a_plus_b if a_plus_b > 0 else 0.0
 
 
-def surface_distance(target, estimated, spacing=[1, 1, 3]):
+def eucl_distance(a, b):
+    nbrs_a = NearestNeighbors(n_neighbors=1, algorithm='kd_tree').fit(a) if a.size > 0 else None
+    nbrs_b = NearestNeighbors(n_neighbors=1, algorithm='kd_tree').fit(b) if b.size > 0 else None
+    distances_a, _ = nbrs_a.kneighbors(b) if nbrs_a and b.size > 0 else ([np.inf], None)
+    distances_b, _ = nbrs_b.kneighbors(a) if nbrs_b and a.size > 0 else ([np.inf], None)
+
+    return [distances_a, distances_b]
+
+
+def surface_distance(target, estimated, spacing=list((1, 1, 3))):
     a = as_logical(target)
     b = as_logical(estimated)
     a_bound = np.stack(np.where(np.logical_and(a, np.logical_not(imerode(a)))), axis=1) * spacing
     b_bound = np.stack(np.where(np.logical_and(b, np.logical_not(imerode(b)))), axis=1) * spacing
-    nbrs_a = NearestNeighbors(n_neighbors=1, algorithm='kd_tree').fit(a_bound) if a_bound.size > 0 else None
-    nbrs_b = NearestNeighbors(n_neighbors=1, algorithm='kd_tree').fit(b_bound) if b_bound.size > 0 else None
-    distances_a, _ = nbrs_a.kneighbors(b_bound) if nbrs_a and b_bound.size > 0 else ([np.inf], None)
-    distances_b, _ = nbrs_b.kneighbors(a_bound) if nbrs_b and a_bound.size > 0 else ([np.inf], None)
-    return [distances_a, distances_b]
+    return eucl_distance(a_bound, b_bound)
+
+
+def mask_distance(target, estimated, spacing=list((1, 1, 3))):
+    a = as_logical(target)
+    b = as_logical(estimated)
+    a_full = np.stack(np.where(a), axis=1) * spacing
+    b_full = np.stack(np.where(b), axis=1) * spacing
+    return eucl_distance(a_full, b_full)
 
 
 def average_surface_distance(target, estimated, spacing):
@@ -118,7 +131,7 @@ def hausdorff_distance(target, estimated, spacing):
 
 
 def modified_hausdorff_distance(target, estimated, spacing):
-    distances = surface_distance(target, estimated, spacing)
+    distances = mask_distance(target, estimated, spacing)
     return np.max([np.mean(distances[0]), np.mean(distances[1])])
 
 
