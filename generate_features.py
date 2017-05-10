@@ -4,6 +4,7 @@ from time import strftime
 from nibabel import load as load_nii
 from scipy.ndimage import label
 from scipy.ndimage import center_of_mass
+from scipy.ndimage.interpolation import zoom
 import argparse
 import numpy as np
 from operator import add
@@ -97,7 +98,7 @@ def get_patches_from_name(filename, centers, patch_size):
     return patches
 
 
-def get_patches(image, centers, patch_size=(15, 15, 15)):
+def get_patches(image, centers, patch_size=(15, 15, 15), spacing=None):
     # If the size has even numbers, the patch will be centered. If not, it will try to create an square almost centered.
     # By doing this we allow pooling when using encoders/unets.
     patches = []
@@ -113,6 +114,8 @@ def get_patches(image, centers, patch_size=(15, 15, 15)):
             for center in new_centers
         ]
         patches = [new_image[idx] for idx in slices]
+        if spacing is not None:
+            patches = [zoom(patch, spacing) for patch in patches]
     return patches
 
 
