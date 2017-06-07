@@ -37,10 +37,14 @@ def analysis_by_sizes(target, estimated, sizes):
     fps_list = [np.count_nonzero(fp_i) for fp_i in fp_sub]
     gtd_list = [len(filter(bool, np.unique(bwlabeln(a_i)))) for a_i in a_sub]
     gts_list = [np.count_nonzero(a_i) for a_i in a_sub]
-    tpf_list = [100.0 * tp_i/gt_i for tp_i, gt_i in zip(tpd_list, gtd_list)]
-    fpf_list = [100.0 * fp_i / (fp_i+tp_i) for tp_i, fp_i in zip(tpd_list, fpd_list)]
-    dscd_list = [2.0 * tp_i / (tp_i + fp_i + gt_i) for tp_i, fp_i, gt_i in zip(tpd_list, fpd_list, gtd_list)]
-    dscs_list = [2.0 * tp_i / (tp_i + fp_i + gt_i) for tp_i, fp_i, gt_i in zip(tps_list, fps_list, gts_list)]
+    tpf_list = [100.0 * tp_i/gt_i if gt_i > 0 else 0.0
+                for tp_i, gt_i in zip(tpd_list, gtd_list)]
+    fpf_list = [100.0 * fp_i / (fp_i+tp_i) if fp_i+tp_i > 0 else 0.0
+                for tp_i, fp_i in zip(tpd_list, fpd_list)]
+    dscd_list = [2.0 * tp_i / (tp_i + fp_i + gt_i) if (tp_i + fp_i + gt_i) > 0 else 0.0
+                 for tp_i, fp_i, gt_i in zip(tpd_list, fpd_list, gtd_list)]
+    dscs_list = [2.0 * tp_i / (tp_i + fp_i + gt_i) if (tp_i + fp_i + gt_i) > 0 else 0.0
+                 for tp_i, fp_i, gt_i in zip(tps_list, fps_list, gts_list)]
     return tpf_list, fpf_list, dscd_list, dscs_list
 
 
