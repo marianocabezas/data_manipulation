@@ -9,6 +9,41 @@ from sklearn.neighbors import NearestNeighbors
 import contextlib
 
 
+def regionprops(mask):
+    blobs = bwlabeln(as_logical(mask))
+    labels = filter(bool, np.unique(blobs))
+    areas = [np.count_nonzero(blobs == l) for l in labels]
+    return blobs, labels, areas
+
+
+def masks_by_size(mask, sizes):
+    blobs, labels, areas = regionprops(mask)
+    labels_list = [[l for l, a in zip(labels, areas) if a >= mins & a < maxs]
+                   for mins, maxs in zip(sizes[:-1], sizes[1:])]
+    labels_list.append([l for l, a in zip(labels, areas) if a > sizes[-1]])
+    submasks = [reduce(lambda x, y: np.logical_or(x, y), [np.equal(blobs, l) for l in nu_labels])
+                for nu_labels in labels_list]
+    return submasks
+
+
+def analysis_by_sizes(target, estimated, sizes):
+    a = as_logical(target)
+    b = as_logical(estimated)
+    a_sub = masks_by_size(a, sizes)
+    fp_sub = masks_by_size(np.logical_and(np.logical_not(a), b), sizes)
+    tpd_list = [true_positive_det(a_i, b) for a_i in a_sub]
+    tps_list = [true_positive_seg(a_i, b) for a_i in a_sub]
+    fpd_list = [len(filter(bool, np.unique(bwlabeln(fp_i)))) for fp_i in fp_sub]
+    fps_list = [np.count_nonzero(fp_i) for fp_i in fp_sub]
+    gtd_list = [len(filter(bool, np.unique(bwlabeln(a_i)))) for a_i in a_sub]
+    gts_list = [np.count_nonzero(a_i) for a_i in a_sub]
+    tpf_list = [tp_i/gt_i for tp_i, gt_i in zip(tpd_list, gtd_list)]
+    fpf_list = [fp_i / (fp_i+tp_i) for tp_i, fp_i in zip(tpd_list, fpd_list)]
+    dscd_list = [2 * tp_i / (tp_i + fp_i + gt_i) for tp_i, fp_i, gt_i in zip(tpd_list, fpd_list, gtd_list)]
+    dscs_list = [2 * tp_i / (tp_i + fp_i + gt_i) for tp_i, fp_i, gt_i in zip(tps_list, fps_list, gts_list)]
+    return tpf_list, fpf_list, dscd_list, dscs_list
+
+
 def probabilistic_dsc_seg(target, estimated):
     a = np.array(target).astype(dtype=np.double)
     b = np.array(estimated).astype(dtype=np.double)
@@ -30,7 +65,7 @@ def num_voxels(mask):
 def true_positive_seg(target, estimated):
     a = as_logical(target)
     b = as_logical(estimated)
-    return np.sum(np.logical_and(a, b))
+    return np.count_nonzero(np.logical_and(a, b))
 
 
 def true_positive_det(target, estimated):
@@ -50,24 +85,24 @@ def false_positive_det(target, estimated):
 def true_negative_seg(target, estimated):
     a = as_logical(target)
     b = as_logical(estimated)
-    return np.sum(np.logical_and(a, b))
+    return np.count_nonzero(np.logical_and(a, b))
 
 
 def false_positive_seg(target, estimated):
     a = as_logical(target)
     b = as_logical(estimated)
-    return np.sum(np.logical_and(np.logical_not(a), b))
+    return np.count_nonzero(np.logical_and(np.logical_not(a), b))
 
 
 def false_negative_seg(target, estimated):
     a = as_logical(target)
     b = as_logical(estimated)
-    return np.sum(np.logical_and(a, np.logical_not(b)))
+    return np.count_nonzero(np.logical_and(a, np.logical_not(b)))
 
 
 def tp_fraction_seg(target, estimated):
-    return 100.0 * true_positive_seg(target, estimated) / np.sum(as_logical(target)) \
-        if np.sum(as_logical(target)) > 0 else 0
+    return 100.0 * true_positive_seg(target, estimated) / np.count_nonzero(as_logical(target)) \
+        if np.count_nonzero(as_logical(target)) > 0 else 0
 
 
 def tp_fraction_det(target, estimated):
@@ -86,7 +121,7 @@ def fp_fraction_det(target, estimated):
 
 
 def dsc_seg(target, estimated):
-    a_plus_b = np.sum(np.sum(as_logical(target)) + np.sum(as_logical(estimated)))
+    a_plus_b = np.sum(np.sum(as_logical(target)) + np.count_nonzero(as_logical(estimated)))
     return 2.0 * true_positive_seg(target, estimated) / a_plus_b if a_plus_b > 0 else 0.0
 
 
@@ -142,13 +177,24 @@ def main():
 
     # Parse command line options
     parser = argparse.ArgumentParser(description='Test different nets with 3D data.')
-    group = parser.add_mutually_exclusive_group()
+    group_in = parser.add_mutually_exclusive_group()
+    group_out = parser.add_mutually_exclusive_group()
 
     folder_help = 'Folder with the files to evaluate. Remember to include a init_names.py for the evaluation pairs.'
     files_help = 'Pair of files to be compared. The first is the GT and the second the file you wnat to evaluate.'
 
-    group.add_argument('-f', '--folder', help=folder_help)
-    group.add_argument('--files', nargs=2, help=files_help)
+    group_in.add_argument('-f', '--folder', help=folder_help)
+    group_in.add_argument('--files', nargs=2, help=files_help)
+
+    general_help = 'General evaluation. Based on the 2008 MS challenge''s measures. ' \
+                   'Volume and detection absolute measures are also included for all the images.'
+    sizes_help = 'Evaluation based on region sizes. ' \
+                 'Includes TPF, FPF and DSC for detection and DSC for segmentation. ' \
+                 'The size of TP is determined by the GT size, while the FP size is determined by the FP lesion.'
+
+    group_out.add_argument('-g', '--general', help=general_help)
+    group_out.add_argument('-s', '--sizes', dest='sizes', nargs='+', type=int, default=[3, 11, 51], help=sizes_help)
+
     args = parser.parse_args()
 
     if args.folder:
@@ -174,25 +220,44 @@ def main():
                 name = ''.join(name)
                 print('\033[32m-- vs \033[32;1m' + name + '\033[0m')
                 lesion = load_nii(name).get_data()
-                dist = average_surface_distance(gt, lesion, spacing)
-                tpfv = tp_fraction_seg(gt, lesion)
-                fpfv = fp_fraction_seg(gt, lesion)
-                dscv = dsc_seg(gt, lesion)
-                tpfl = tp_fraction_det(gt, lesion)
-                fpfl = fp_fraction_det(gt, lesion)
-                dscl = dsc_det(gt, lesion)
-                tp = true_positive_det(lesion, gt)
-                gt_d = num_regions(gt)
-                lesion_s = num_voxels(lesion)
-                gt_s = num_voxels(gt)
-                pdsc = probabilistic_dsc_seg(gt, lesion)
-                if f:
-                    measures = (gt_name, name, dist, tpfv, fpfv, dscv, tpfl, fpfl, dscl, tp, gt_d, lesion_s, gt_s)
-                    f.write('%s;%s;%f;%f;%f;%f;%f;%f;%f;%d;%d;%d;%d\n' % measures)
-                else:
-                    measures = (dist, tpfv, fpfv, dscv, tpfl, fpfl, dscl, tp, gt_d, lesion_s, gt_s, pdsc)
-                    print('SurfDist TPFV FPFV DSCV TPFL FPFL DSCL TPL GTL Voxels GTV PrDSC')
-                    print('%f %f %f %f %f %f %f %d %d %d %d %f' % measures)
+
+                if args.general:
+                    dist = average_surface_distance(gt, lesion, spacing)
+                    tpfv = tp_fraction_seg(gt, lesion)
+                    fpfv = fp_fraction_seg(gt, lesion)
+                    dscv = dsc_seg(gt, lesion)
+                    tpfl = tp_fraction_det(gt, lesion)
+                    fpfl = fp_fraction_det(gt, lesion)
+                    dscl = dsc_det(gt, lesion)
+                    tp = true_positive_det(lesion, gt)
+                    gt_d = num_regions(gt)
+                    lesion_s = num_voxels(lesion)
+                    gt_s = num_voxels(gt)
+                    pdsc = probabilistic_dsc_seg(gt, lesion)
+                    if f:
+                        measures = (gt_name, name, dist, tpfv, fpfv, dscv, tpfl, fpfl, dscl, tp, gt_d, lesion_s, gt_s)
+                        f.write('%s;%s;%f;%f;%f;%f;%f;%f;%f;%d;%d;%d;%d\n' % measures)
+                    else:
+                        measures = (dist, tpfv, fpfv, dscv, tpfl, fpfl, dscl, tp, gt_d, lesion_s, gt_s, pdsc)
+                        print('SurfDist TPFV FPFV DSCV TPFL FPFL DSCL TPL GTL Voxels GTV PrDSC')
+                        print('%f %f %f %f %f %f %f %d %d %d %d %f' % measures)
+                elif args.sizes:
+                    sizes = args.sizes
+                    tpf, fpf, dscd, dscs = analysis_by_sizes(gt, lesion, sizes)
+                    names = '%s;%s;' % (gt_name, name)
+                    measures = ';'.join(['%f;%f;%f;%f' % (tpf_i, fpf_i, dscd_i, dscs_i)
+                                         for tpf_i, fpf_i, dscd_i, dscs_i in zip(tpf, fpf, dscd, dscs)])
+                    if f:
+                        f.write(names + measures + '\n')
+                    else:
+                        intervals = ['\t\t[%d-%d)\t\t' % (mins, maxs) for mins, maxs in zip(sizes[:-1], sizes[1:])]
+                        intervals = ''.join(intervals) + '[%d-inf)' % sizes[-1]
+                        measures_s = 'TPF\tFPF\tDSCd\tDSCs\t' * len(sizes)
+                        measures = ['%.2f\t%.2f\t%.2f\t%.2f\t' % (tpf_i, fpf_i, dscd_i, dscs_i)
+                                    for tpf_i, fpf_i, dscd_i, dscs_i in zip(tpf, fpf, dscd, dscs)]
+                        print(intervals)
+                        print(measures_s)
+                        print(measures)
 
 
 if __name__ == '__main__':
