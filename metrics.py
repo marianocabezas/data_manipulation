@@ -21,8 +21,8 @@ def masks_by_size(mask, sizes):
     labels_list = [[l for l, a in zip(labels, areas) if a >= mins & a < maxs]
                    for mins, maxs in zip(sizes[:-1], sizes[1:])]
     labels_list.append([l for l, a in zip(labels, areas) if a > sizes[-1]])
-    submasks = [reduce(lambda x, y: np.logical_or(x, y), [np.equal(blobs, l) for l in nu_labels])
-                for nu_labels in labels_list]
+    submasks = [reduce(lambda x, y: np.logical_or(x, y), [np.equal(blobs, l) for l in nu_labels if nu_labels])
+                if nu_labels else np.zeros_like(mask) for nu_labels in labels_list]
     return submasks
 
 
