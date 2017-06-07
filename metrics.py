@@ -250,7 +250,7 @@ def main():
                         measures = (dist, tpfv, fpfv, dscv, tpfl, fpfl, dscl, tp, gt_d, lesion_s, gt_s, pdsc)
                         print('SurfDist TPFV FPFV DSCV TPFL FPFL DSCL TPL GTL Voxels GTV PrDSC')
                         print('%f %f %f %f %f %f %f %d %d %d %d %f' % measures)
-                elif args.sizes:
+                else:
                     sizes = args.sizes
                     tpf, fpf, dscd, dscs = analysis_by_sizes(gt, lesion, sizes)
                     names = '%s;%s;' % (gt_name, name)
