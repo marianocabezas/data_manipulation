@@ -253,8 +253,8 @@ def main():
                         intervals = ['\t\t[%d-%d)\t\t' % (mins, maxs) for mins, maxs in zip(sizes[:-1], sizes[1:])]
                         intervals = ''.join(intervals) + '[%d-inf)' % sizes[-1]
                         measures_s = 'TPF\tFPF\tDSCd\tDSCs\t' * len(sizes)
-                        measures = ['%.2f\t%.2f\t%.2f\t%.2f\t' % (tpf_i, fpf_i, dscd_i, dscs_i)
-                                    for tpf_i, fpf_i, dscd_i, dscs_i in zip(tpf, fpf, dscd, dscs)]
+                        measures = ''.join(['%.2f\t%.2f\t%.2f\t%.2f\t' % (tpf_i, fpf_i, dscd_i, dscs_i)
+                                            for tpf_i, fpf_i, dscd_i, dscs_i in zip(tpf, fpf, dscd, dscs)])
                         print(intervals)
                         print(measures_s)
                         print(measures)
