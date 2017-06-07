@@ -20,7 +20,7 @@ def masks_by_size(mask, sizes):
     blobs, labels, areas = regionprops(mask)
     print(''.join(['[%d,%d)' % (mins, maxs) for mins, maxs in zip(sizes[:-1], sizes[1:])]))
     print(''.join(['%d: %d\t' % (l, a) for l, a in zip(labels, areas)]))
-    labels_list = [[l for l, a in zip(labels, areas) if a >= mins & a < maxs]
+    labels_list = [[l for l, a in zip(labels, areas) if (a >= mins) & (a < maxs)]
                    for mins, maxs in zip(sizes[:-1], sizes[1:])]
     labels_list.append([l for l, a in zip(labels, areas) if a >= sizes[-1]])
     print(labels_list)
