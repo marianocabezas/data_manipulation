@@ -212,6 +212,10 @@ def main():
         gt_names = [args.files[0]]
         all_names = [[args.files[1]]]
 
+    if args.general:
+        print('\033[32;1mGeneral\033[0m\033[32m evaluation\033[0m')
+    else:
+        print('\033[32;1mLesion size\033[0m\033[32m evaluation\033[0m')
     with open(os.path.join(folder_name, 'results.csv'), 'w') if args.folder else dummy_file() as f:
         for gt_name, names in zip(gt_names, all_names):
             print('\033[32mEvaluating with ground truth \033[32;1m' + gt_name + '\033[0m')
@@ -226,6 +230,7 @@ def main():
                 lesion = load_nii(name).get_data()
 
                 if args.general:
+                    print()
                     dist = average_surface_distance(gt, lesion, spacing)
                     tpfv = tp_fraction_seg(gt, lesion)
                     fpfv = fp_fraction_seg(gt, lesion)
