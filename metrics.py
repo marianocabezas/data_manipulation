@@ -211,12 +211,14 @@ def main():
         folder_name = os.getcwd()
         gt_names = [args.files[0]]
         all_names = [[args.files[1]]]
-
     if args.general:
         print('\033[32;1mGeneral\033[0m\033[32m evaluation\033[0m')
+        results_name = 'results.g.csv'
     else:
         print('\033[32;1mLesion size\033[0m\033[32m evaluation\033[0m')
-    with open(os.path.join(folder_name, 'results.csv'), 'w') if args.folder else dummy_file() as f:
+        sizes = args.sizes
+        results_name = 'results.s%s.csv' % '.'.join(['%d' % s for s in sizes])
+    with open(os.path.join(folder_name, results_name), 'w') if args.folder else dummy_file() as f:
         for gt_name, names in zip(gt_names, all_names):
             print('\033[32mEvaluating with ground truth \033[32;1m' + gt_name + '\033[0m')
 
@@ -250,7 +252,6 @@ def main():
                         print('SurfDist TPFV FPFV DSCV TPFL FPFL DSCL TPL GTL Voxels GTV PrDSC')
                         print('%f %f %f %f %f %f %f %d %d %d %d %f' % measures)
                 else:
-                    sizes = args.sizes
                     tpf, fpf, dscd, dscs = analysis_by_sizes(gt, lesion, sizes)
                     names = '%s;%s;' % (gt_name, name)
                     measures = ';'.join(['%f;%f;%f;%f' % (tpf_i, fpf_i, dscd_i, dscs_i)
