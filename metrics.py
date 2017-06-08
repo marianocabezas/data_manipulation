@@ -196,7 +196,7 @@ def main():
                  'Includes TPF, FPF and DSC for detection and DSC for segmentation. ' \
                  'The size of TP is determined by the GT size, while the FP size is determined by the FP lesion.'
 
-    group_out.add_argument('-g', '--general', help=general_help)
+    group_out.add_argument('-g', '--general', nargs=0, help=general_help)
     group_out.add_argument('-s', '--sizes', dest='sizes', nargs='+', type=int, default=[3, 11, 51], help=sizes_help)
 
     args = parser.parse_args()
@@ -230,7 +230,6 @@ def main():
                 lesion = load_nii(name).get_data()
 
                 if args.general:
-                    print()
                     dist = average_surface_distance(gt, lesion, spacing)
                     tpfv = tp_fraction_seg(gt, lesion)
                     fpfv = fp_fraction_seg(gt, lesion)
