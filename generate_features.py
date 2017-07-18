@@ -103,7 +103,7 @@ def get_patches(image, centers, patch_size=(15, 15, 15), spacing=None):
     # By doing this we allow pooling when using encoders/unets.
     patches = []
     list_of_tuples = all([isinstance(center, tuple) for center in centers])
-    sizes_match = [len(center) == len(patch_size) for center in centers]
+    sizes_match = all([len(center) == len(patch_size) for center in centers])
     if list_of_tuples and sizes_match:
         patch_half = tuple([idx/2 for idx in patch_size])
         new_centers = [map(add, center, patch_half) for center in centers]
