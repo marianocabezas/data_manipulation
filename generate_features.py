@@ -119,6 +119,23 @@ def get_patches(image, centers, patch_size=(15, 15, 15), spacing=None):
     return patches
 
 
+def get_rolling_patches(image, patch_size):
+    """Very basic multi dimensional rolling window. Window should be the shape of
+    of the desired subarrays. Window is either a scalar or a tuple of same size
+    as `arr.shape`.
+    """
+    assert type(image) is np.ndarray, 'Image is not a numpy array: %r' % image
+    shape = np.array(image.shape * 2)
+    strides = np.array(image.strides * 2)
+    window = np.asarray(patch_size)
+    # new dimensions size
+    shape[image.ndim:] = window
+    shape[:image.ndim] -= window - 1
+    if np.any(shape < 1):
+        raise ValueError('window size is too large')
+    return np.lib.stride_tricks.as_strided(image, shape=shape, strides=strides)
+
+
 def get_patches2_5d(image, centers, patch_size=(15, 15)):
     # If the size has even numbers, the patch will be centered. If not, it will try to create an square almost centered.
     # By doing this we allow pooling when using encoders/unets.
