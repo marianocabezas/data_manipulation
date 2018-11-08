@@ -181,9 +181,7 @@ def get_patches2_5d(image, centers, patch_size=(15, 15)):
 
     
 def get_mask_voxels(mask):
-    indices = np.stack(np.nonzero(mask), axis=1)
-    indices = [tuple(idx) for idx in indices]
-    return indices
+    return map(tuple, np.stack(np.nonzero(mask), axis=1))
 
 
 def get_mask_centers(mask):
