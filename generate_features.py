@@ -98,22 +98,28 @@ def get_patches_from_name(filename, centers, patch_size):
     return patches
 
 
+def get_voxels(image, centers):
+    return map(lambda center: image[tuple(center)], centers)
+
+
 def get_patches(image, centers, patch_size=(15, 15, 15), spacing=None):
     # If the size has even numbers, the patch will be centered. If not, it will try to create an square almost centered.
     # By doing this we allow pooling when using encoders/unets.
     patches = []
-    list_of_tuples = all([isinstance(center, tuple) for center in centers])
-    sizes_match = all([len(center) == len(patch_size) for center in centers])
+    list_of_tuples = all(map(lambda center: isinstance(center, tuple), centers))
+    sizes_match = all(map(lambda center: len(center) == len(patch_size), centers))
     if list_of_tuples and sizes_match:
-        patch_half = tuple([idx/2 for idx in patch_size])
-        new_centers = [map(add, center, patch_half) for center in centers]
-        padding = tuple((idx, size-idx) for idx, size in zip(patch_half, patch_size))
+        patch_half = tuple(map(lambda idx: idx/2, patch_size))
+        padding = tuple(map(lambda (idx, size): (idx, size-idx), zip(patch_half, patch_size)))
         new_image = np.pad(image, padding, mode='constant', constant_values=0)
-        slices = [
-            [slice(c_idx-p_idx, c_idx+(s_idx-p_idx)) for (c_idx, p_idx, s_idx) in zip(center, patch_half, patch_size)]
-            for center in new_centers
-        ]
-        patches = [new_image[idx] for idx in slices]
+        slices = map(
+            lambda center: map(
+                lambda (c_idx, p_idx, s_idx): slice(c_idx-p_idx, c_idx+(s_idx-p_idx)),
+                zip(center, patch_half, patch_size)
+            ),
+            map(lambda center: map(add, center, patch_half), centers)
+        )
+        patches = map(lambda idx: new_image[idx], slices)
         if spacing is not None:
             patches = [zoom(patch, spacing) for patch in patches]
     return patches
@@ -187,7 +193,7 @@ def get_mask_voxels(mask):
 def get_mask_centers(mask):
     labels, nlabels = label(mask)
     all_labels = range(1, nlabels+1)
-    centers = [tuple(map(int_round, center)) for center in center_of_mass(mask, labels, all_labels)]
+    centers = map(lambda center: tuple(map(int_round, center)), center_of_mass(mask, labels, all_labels))
     return centers
 
 
