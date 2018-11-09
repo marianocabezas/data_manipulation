@@ -1,14 +1,14 @@
 from scipy.stats import entropy
 import numpy as np
-from numpy import histogramdd, histogram
+from numpy import histogramdd, histogram2d, histogram
 from itertools import chain, combinations
 
 
-def mutual_information(images, bins=256):
+def multivariate_mutual_information(images, bins=256):
     # Images should be a list of numpy arrays.
 
     # In order to compute the mutual information, we will need to compute the
-    # entropies for each subset of the images as described ion (Bell 2003)
+    # entropies for each subset of the images as described in (Bell 2003)
     # Thus, we create an iterable with all the possible combinations.
     nimages = len(images)
     im_idx = range(0, nimages)
@@ -19,10 +19,10 @@ def mutual_information(images, bins=256):
     # For convenience, is also better if we vectorise the images and stack
     # them in a single numpy array. This simplifies the process of computing
     # the histogram (joint in multidimensional cases)
-    images_vec = [image.reshape(-1) for image in images]
+    images_vec = [image.flatten() for image in images]
     np_images = np.stack(images_vec, axis=1)
     histograms = [histogramdd(np_images[:, c], bins=bins) for c in image_comb]
-    histograms_norm = [(h.reshape(-1) / h.astype(np.float32).sum(), len(h.shape)) for h, e in histograms]
+    histograms_norm = [(h.flatten() / h.astype(np.float32).sum(), len(h.shape)) for h, e in histograms]
     histograms_non0 = [(h[np.nonzero(h)], s) for h, s in histograms_norm]
     informations = [-((-1) ** ((nimages - s) % 2)) * entropy(h) for h, s in histograms_non0]
     return np.stack(informations).sum()
@@ -30,12 +30,44 @@ def mutual_information(images, bins=256):
 
 def entropies(images, bins=256):
     # Images should be a list of numpy arrays.
-    histograms = [histogram(image.reshape(-1), bins=bins) for image in images]
+    histograms = [histogram(image.flatten(), bins=bins) for image in images]
     return [entropy(h[np.nonzero(h)] / h.sum()) for h, s in histograms]
 
 
 def joint_entropy(images, bins=256):
     # Images should be a list of numpy arrays.
-    np_images = np.stack([image.reshape(-1) for image in images], axis=1)
+    np_images = np.stack([image.flatten() for image in images], axis=1)
     h, s = histogramdd(np_images, bins=bins)
     return entropy(h[np.nonzero(h)] / h.sum())
+
+
+def normalized_mutual_information(var_x, var_y, bins=256):
+    # We compute the 1d entropies first ...
+    hist_x, _ = histogram(var_x.flatten(), bins)
+    normhist_x = hist_a / hist_x.astype(np.float32).sum()
+    entr_x = entropy(normhist_x)
+
+    hist_y, _ = histogram(var_y.flatten(), bins)
+    normhist_y = hist_y / hist_y.astype(np.float32).sum()
+    entr_y = entropy(normhist_y)
+
+    # ... and then the joint one
+    hist_xyb, _, _ = histogram2d(var_x.flatten(), var_y.flatten(), bins)
+    normhist_xy = hist_xy.flatten() / hist_xy.astype(np.float32).sum()
+    entr_xy = entropy(normhist_xy)
+
+    # This are all the values we need to compute the normalized mutual information.
+    # To normalize it, we will use the metric version = 2 * H(X, Y) - H(X) - H(Y)
+    mi = 2 * entr_xy - entr_x - entr_y
+
+    return mi
+
+
+def bidirectional_mahalanobis(var_x, var_y, bins=256):
+    # We compute both distribution's Gaussian parameters
+    mu_x = np.mean(var_x)
+    sigma_x = np.std(var_x)
+
+    mu_y = np.mean(var_y)
+    sigma_y = np.std(var_y)
+    return (sigma_x + sigma_y) * (mu_x - mu_y) * (mu_x - mu_y) / (sigma_x * sigma_y)
