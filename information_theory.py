@@ -77,6 +77,6 @@ def bidirectional_mahalanobis(var_x, var_y):
 
     mu_diff = mu_x - mu_y
 
-    mahal = (sigma_x + sigma_y) * mu_diff * mu_diff / (sigma_x * sigma_y)
+    mahal = (sigma_x + sigma_y) * mu_diff * mu_diff
 
-    return mahal
+    return mahal / (sigma_x * sigma_y) if (sigma_x * sigma_y) != 0 else mahal
