@@ -55,7 +55,7 @@ def normalized_mutual_information(var_x, var_y, bins=256):
     entr_y = entropy(normhist_y)
 
     # ... and then the joint one
-    hist_xyb, _, _ = histogram2d(np_x.flatten(), np_y.flatten(), bins)
+    hist_xy, _, _ = histogram2d(np_x.flatten(), np_y.flatten(), bins)
     normhist_xy = hist_xy.flatten() / hist_xy.astype(np.float32).sum()
     entr_xy = entropy(normhist_xy)
 
