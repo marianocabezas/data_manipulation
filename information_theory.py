@@ -42,17 +42,20 @@ def joint_entropy(images, bins=256):
 
 
 def normalized_mutual_information(var_x, var_y, bins=256):
+    # Init
+    np_x = np.array(var_x)
+    np_y = np.array(var_y)
     # We compute the 1d entropies first ...
-    hist_x, _ = histogram(np.array(var_x).flatten(), bins)
+    hist_x, _ = histogram(np_x.flatten(), bins)
     normhist_x = hist_x / hist_x.astype(np.float32).sum()
     entr_x = entropy(normhist_x)
 
-    hist_y, _ = histogram(np.array(var_y).flatten(), bins)
+    hist_y, _ = histogram(np_y.flatten(), bins)
     normhist_y = hist_y / hist_y.astype(np.float32).sum()
     entr_y = entropy(normhist_y)
 
     # ... and then the joint one
-    hist_xyb, _, _ = histogram2d(var_x.flatten(), var_y.flatten(), bins)
+    hist_xyb, _, _ = histogram2d(np_x.flatten(), np_y.flatten(), bins)
     normhist_xy = hist_xy.flatten() / hist_xy.astype(np.float32).sum()
     entr_xy = entropy(normhist_xy)
 
