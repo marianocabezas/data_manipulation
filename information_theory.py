@@ -43,11 +43,11 @@ def joint_entropy(images, bins=256):
 
 def normalized_mutual_information(var_x, var_y, bins=256):
     # We compute the 1d entropies first ...
-    hist_x, _ = histogram(var_x.flatten(), bins)
+    hist_x, _ = histogram(np.array(var_x).flatten(), bins)
     normhist_x = hist_a / hist_x.astype(np.float32).sum()
     entr_x = entropy(normhist_x)
 
-    hist_y, _ = histogram(var_y.flatten(), bins)
+    hist_y, _ = histogram(np.array(var_y).flatten(), bins)
     normhist_y = hist_y / hist_y.astype(np.float32).sum()
     entr_y = entropy(normhist_y)
 
@@ -56,18 +56,24 @@ def normalized_mutual_information(var_x, var_y, bins=256):
     normhist_xy = hist_xy.flatten() / hist_xy.astype(np.float32).sum()
     entr_xy = entropy(normhist_xy)
 
-    # This are all the values we need to compute the normalized mutual information.
-    # To normalize it, we will use the metric version = 2 * H(X, Y) - H(X) - H(Y)
+    # This are all the values we need to compute the normalized mutual
+    # information.To normalize it, we will use the metric version
+    # 2 * H(X, Y) - H(X) - H(Y)
     mi = 2 * entr_xy - entr_x - entr_y
 
     return mi
 
 
-def bidirectional_mahalanobis(var_x, var_y, bins=256):
+def bidirectional_mahalanobis(var_x, var_y):
     # We compute both distribution's Gaussian parameters
-    mu_x = np.mean(var_x)
-    sigma_x = np.std(var_x)
+    mu_x = np.mean(np.array(var_x))
+    sigma_x = np.std(np.array(var_x))
 
-    mu_y = np.mean(var_y)
-    sigma_y = np.std(var_y)
-    return (sigma_x + sigma_y) * (mu_x - mu_y) * (mu_x - mu_y) / (sigma_x * sigma_y)
+    mu_y = np.mean(np.array(var_y))
+    sigma_y = np.std(np.array(var_y))
+
+    mu_diff = mu_x - mu_y
+
+    mahal = (sigma_x + sigma_y) * mu_diff * mu_diff / (sigma_x * sigma_y)
+
+    return mahal
