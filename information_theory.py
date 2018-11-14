@@ -47,22 +47,22 @@ def normalized_mutual_information(var_x, var_y, bins=256):
     np_y = np.array(var_y)
     # We compute the 1d entropies first ...
     hist_x, _ = histogram(np_x.flatten(), bins)
-    normhist_x = hist_x / hist_x.astype(np.float32).sum()
-    entr_x = entropy(normhist_x)
+    p_x = hist_x / hist_x.astype(np.float32).sum()
+    entr_x = entropy(p_x)
 
     hist_y, _ = histogram(np_y.flatten(), bins)
-    normhist_y = hist_y / hist_y.astype(np.float32).sum()
-    entr_y = entropy(normhist_y)
+    p_y = hist_y / hist_y.astype(np.float32).sum()
+    entr_y = entropy(p_y)
 
     # ... and then the joint one
     hist_xy, _, _ = histogram2d(np_x.flatten(), np_y.flatten(), bins)
-    normhist_xy = hist_xy.flatten() / hist_xy.astype(np.float32).sum()
-    entr_xy = entropy(normhist_xy)
+    p_xy = hist_xy.flatten() / hist_xy.astype(np.float32).sum()
+    entr_xy = entropy(p_xy)
 
     # This are all the values we need to compute the normalized mutual
     # information.To normalize it, we will use the metric version
-    # H(X) + H(Y) - 2 * H(X, Y)
-    mi = entr_x + entr_y - 2 * entr_xy
+    # (H(X) + H(Y) - H(X, Y)) / (H(X) + H(Y))
+    mi = (entr_x + entr_y - entr_xy) / (entr_x + entr_y)
 
     return mi
 
