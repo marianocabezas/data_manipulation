@@ -61,8 +61,8 @@ def normalized_mutual_information(var_x, var_y, bins=256):
 
     # This are all the values we need to compute the normalized mutual
     # information.To normalize it, we will use the metric version
-    # 2 * H(X, Y) - H(X) - H(Y)
-    mi = 2 * entr_xy - entr_x - entr_y
+    # H(X) + H(Y) - 2 * H(X, Y)
+    mi = entr_x + entr_y - 2 * entr_xy
 
     return mi
 
