@@ -67,11 +67,37 @@ def itkresample(
     elif isinstance(moving, np.ndarray):
         moving = sitk.GetImageFromArray(moving)
 
-    interp_alg = interpolation if not isinstance(interpolation, basestring) else interpolation_dict[interpolation]
+    interp_alg = interpolation if not isinstance(interpolation, basestring)\
+        else interpolation_dict[interpolation]
 
     resampled = sitk.Resample(moving, fixed, transform, interp_alg, default_value)
 
     return sitk.GetArrayFromImage(resampled)
+
+
+def itkwarp(
+        fixed,
+        moving,
+        field,
+        default_value=0.0,
+        interpolation=sitk.sitkBSpline
+):
+    """
+
+    :param fixed: Fixed image
+    :param moving: Moving image
+    :param field: Displacement field
+    :param default_value:
+    :param interpolation: interpolation function
+    :return:
+    """
+
+    if isinstance(field, basestring):
+        field = sitk.ReadImage(field)
+
+    df_transform = sitk.DisplacementFieldTransform(field)
+
+    return itkresample(fixed, moving, df_transform, default_value, interpolation)
 
 
 def itkn4(
