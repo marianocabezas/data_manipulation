@@ -38,6 +38,8 @@ def itkresample(
         fixed,
         moving,
         transform,
+        path=None,
+        name=None,
         default_value=0.0,
         interpolation=sitk.sitkBSpline
 ):
@@ -46,6 +48,8 @@ def itkresample(
     :param fixed:
     :param moving:
     :param transform:
+    :param path:
+    :param name:
     :param default_value:
     :param interpolation:
     :return:
@@ -67,10 +71,19 @@ def itkresample(
     elif isinstance(moving, np.ndarray):
         moving = sitk.GetImageFromArray(moving)
 
-    interp_alg = interpolation if not isinstance(interpolation, basestring)\
-        else interpolation_dict[interpolation]
+    if verbose > 1:
+        print('\t  Image: ' + os.path.join(path, name + '.nii.gz'))
 
-    resampled = sitk.Resample(moving, fixed, transform, interp_alg, default_value)
+    if path is None or name is None or find_file(name + '.nii.gz', path) is None:
+        interp_alg = interpolation if not isinstance(interpolation, basestring)\
+            else interpolation_dict[interpolation]
+
+        resampled = sitk.Resample(moving, fixed, transform, interp_alg, default_value)
+
+        if path is not None and name is not None:
+            sitk.WriteImage(sub, os.path.join(path, name + '.nii.gz'))
+    else:
+        resampled = sitk.ReadImage(os.path.join(path, name + '.nii.gz'))
 
     return sitk.GetArrayFromImage(resampled)
 
@@ -79,6 +92,8 @@ def itkwarp(
         fixed,
         moving,
         field,
+        path=None,
+        name=None,
         default_value=0.0,
         interpolation=sitk.sitkBSpline
 ):
@@ -87,6 +102,8 @@ def itkwarp(
     :param fixed: Fixed image
     :param moving: Moving image
     :param field: Displacement field
+    :param path:
+    :param name:
     :param default_value:
     :param interpolation: interpolation function
     :return:
@@ -97,7 +114,7 @@ def itkwarp(
 
     df_transform = sitk.DisplacementFieldTransform(field)
 
-    return itkresample(fixed, moving, df_transform, default_value, interpolation)
+    return itkresample(fixed, moving, df_transform, path, name, default_value, interpolation)
 
 
 def itkn4(
