@@ -116,7 +116,8 @@ def itkwarp(
     if isinstance(field, basestring):
         field = sitk.ReadImage(field)
 
-    df_transform = sitk.DisplacementFieldTransform(field)
+    df_transform = sitk.DisplacementFieldTransform()
+    df_transform.SetInverseDisplacementField(field)
 
     return itkresample(
         fixed, moving, df_transform,
