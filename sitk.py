@@ -83,7 +83,7 @@ def itkresample(
         resampled = sitk.Resample(moving, fixed, transform, interp_alg, default_value)
 
         if path is not None and name is not None:
-            sitk.WriteImage(sub, os.path.join(path, name + '.nii.gz'))
+            sitk.WriteImage(resampled, os.path.join(path, name + '.nii.gz'))
     else:
         resampled = sitk.ReadImage(os.path.join(path, name + '.nii.gz'))
 
