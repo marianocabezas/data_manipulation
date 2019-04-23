@@ -41,7 +41,8 @@ def itkresample(
         path=None,
         name=None,
         default_value=0.0,
-        interpolation=sitk.sitkBSpline
+        interpolation=sitk.sitkBSpline,
+        verbose=0
 ):
     """
 
@@ -52,6 +53,7 @@ def itkresample(
     :param name:
     :param default_value:
     :param interpolation:
+    :param verbose:
     :return:
     """
 
@@ -95,7 +97,8 @@ def itkwarp(
         path=None,
         name=None,
         default_value=0.0,
-        interpolation=sitk.sitkBSpline
+        interpolation=sitk.sitkBSpline,
+        verbose=0,
 ):
     """
 
@@ -106,6 +109,7 @@ def itkwarp(
     :param name:
     :param default_value:
     :param interpolation: interpolation function
+    :param verbose:
     :return:
     """
 
@@ -114,7 +118,10 @@ def itkwarp(
 
     df_transform = sitk.DisplacementFieldTransform(field)
 
-    return itkresample(fixed, moving, df_transform, path, name, default_value, interpolation)
+    return itkresample(
+        fixed, moving, df_transform,
+        path, name, default_value, interpolation, verbose
+    )
 
 
 def itkn4(
