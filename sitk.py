@@ -546,11 +546,14 @@ def itkdemons(
         if verbose > 1:
             demons.AddCommand(
                 sitk.sitkIterationEvent,
-                lambda: print('\t  Demons %d: %f' % (demons.GetElapsedIterations(), demons.GetMetric()))
+                lambda: print('\t  Demons %d: %f' % (
+                    demons.GetElapsedIterations(), demons.GetMetric()
+                ))
             )
 
         deformation_field = demons.Execute(fixed_float32, moving_float32)
-        sitk.WriteImage(deformation_field, os.path.join(path, deformation_name))
+        if name is not None and path is not None:
+            sitk.WriteImage(deformation_field, os.path.join(path, deformation_name))
     else:
         deformation_field = sitk.ReadImage(os.path.join(path, deformation_name))
 
