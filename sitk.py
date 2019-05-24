@@ -205,7 +205,7 @@ def itkhist_match(
         print('\t  Image: ' + os.path.join(path, name + '_corrected_matched.nii.gz'))
     if path is None or name is None or find_file(name + '_corrected_matched.nii.gz', path) is None:
         matched = sitk.HistogramMatching(
-            sitk.Cast(moving, fixed.GetPixelIDTypeAsString()), fixed,
+            sitk.Cast(moving, fixed.GetPixelID()), fixed,
             histogram_levels, match_points, mean_on
         )
         if name is not None and path is not None:
