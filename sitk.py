@@ -199,8 +199,6 @@ def itkhist_match(
     elif isinstance(moving, np.ndarray):
         moving = sitk.GetImageFromArray(moving)
 
-    sitk.Cast(moving, fixed.GetPixelIDTypeAsString())
-
     if verbose > 1:
         print('\t  Image: ' + os.path.join(path, name + '_corrected_matched.nii.gz'))
     if path is None or name is None or find_file(name + '_corrected_matched.nii.gz', path) is None:
