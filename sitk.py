@@ -519,10 +519,14 @@ def itkdemons(
         moving = sitk.ReadImage(moving)
     elif isinstance(moving, np.ndarray):
         moving = sitk.GetImageFromArray(moving)
-
     if mask is not None:
+        if isinstance(mask, basestring):
+            mask = sitk.ReadImage(mask)
+        elif isinstance(mask, np.ndarray):
+            mask = sitk.GetImageFromArray(mask)
         fixed = sitk.Mask(fixed, mask)
         moving = sitk.Mask(moving, mask)
+
     fixed_float32 = sitk.Cast(fixed, cast)
     moving_float32 = sitk.Cast(moving, cast)
 
