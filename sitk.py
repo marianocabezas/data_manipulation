@@ -533,9 +533,15 @@ def itkdemons(
     fixed_float32 = sitk.Cast(fixed, cast)
     moving_float32 = sitk.Cast(moving, cast)
 
-    if path is None or name is None or find_file(
-            name + '_multidemons_deformation.nii.gz', path
-    ) is None:
+    if name is not None:
+        deformation_name = name + '_multidemons_deformation.nii.gz'
+    else:
+        deformation_name = '/null'
+
+    if verbose > 1:
+        print('\t  Deformation: ' + os.path.join(path, deformation_name))
+
+    if path is None or name is None or find_file(deformation_name, path) is None:
         demons = sitk.DemonsRegistrationFilter()
         demons.SetNumberOfIterations(steps)
         demons.SetStandardDeviations(sigma)
@@ -550,9 +556,6 @@ def itkdemons(
 
         deformation_field = demons.Execute(fixed_float32, moving_float32)
         if name is not None and path is not None:
-            if verbose > 1:
-                deformation_name = name + '_multidemons_deformation.nii.gz'
-                print('\t  Deformation: ' + os.path.join(path, deformation_name))
             sitk.WriteImage(deformation_field, os.path.join(path, deformation_name))
     else:
         deformation_field = sitk.ReadImage(os.path.join(path, deformation_name))
