@@ -37,7 +37,7 @@ def print_current(reg_method, tf):
 def itkresample(
         fixed,
         moving,
-        transform,
+        transform=None,
         path=None,
         name=None,
         default_value=0.0,
@@ -72,6 +72,8 @@ def itkresample(
         moving = sitk.ReadImage(moving)
     elif isinstance(moving, np.ndarray):
         moving = sitk.GetImageFromArray(moving)
+    if transform is None:
+        transform = sitk.Transform(fixed.GetDimension(), sitk.sitkIdentity)
 
     if verbose > 1:
         print('\t  Image: ' + os.path.join(path, name + '.nii.gz'))
