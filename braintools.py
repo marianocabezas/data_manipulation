@@ -281,9 +281,11 @@ def tissue_pve(
         lambda name: load_nii(name).get_data().astype(np.float32),
         atlas_names
     )
-    images = map(
-        lambda name: load_nii(name).get_data().astype(np.float32),
-        image_names
+    images = np.stack(
+        map(
+            lambda name: load_nii(name).get_data().astype(np.float32),
+            image_names
+        )
     )
     similarity = load_nii(similarity_name).get_data().astype(np.float32)
     masknii = load_nii(mask_name)
