@@ -105,7 +105,7 @@ def atlas_registration(
     )
     map(
         lambda (i, pr_i): sitk.itkwarp(
-            reference, atlases_affine, df,
+            reference, pr_i, df,
             path=path, name='atlas_pr%d' % i
         ),
         enumerate(atlases_pr)
