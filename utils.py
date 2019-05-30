@@ -73,7 +73,7 @@ def find_file(name, dirname):
         os.listdir(dirname)
     )
 
-    return result[0] if result else None
+    return os.path.join(dirname, result[0]) if result else None
 
 
 def print_message(message):
