@@ -48,7 +48,7 @@ def atlas_registration(
             'Atlas registration - %s (%s)' % (timepoint, patient)
         )
     if verbose > 1:
-        print_message(
+        print(
             '- Affine registration - %s (%s)' % (timepoint, patient)
         )
     affine = sitk.itkaffine(reference, atlas)
@@ -72,7 +72,7 @@ def atlas_registration(
     # Histogram matching
     atlas_affine = os.path.join(path, 'atlas_affine.nii.gz')
     if verbose > 1:
-        print_message(
+        print(
             '- Histogram matching - %s (%s)' % (timepoint, patient)
         )
     sitk.itkhist_match(
@@ -82,7 +82,7 @@ def atlas_registration(
 
     # Demons computation
     if verbose > 1:
-        print_message(
+        print(
             '- Demons registration - %s (%s)' % (timepoint, patient)
         )
     atlas_matched = os.path.join(
@@ -168,7 +168,7 @@ def atlas_registration(
         t1nii.to_filename(similarity_name)
 
         if verbose > 1:
-            print_message(
+            print(
                 '- Similarity range = [%f, %f]' % (
                     similarity.min(), similarity.max()
                 )
@@ -188,8 +188,8 @@ def expectation(data, probability, threshold=0.0, verbose=1):
     sigma = np.cov(voxel_int, aweights=probability[thresholded_pr])
 
     if verbose > 1:
-        print('\t  mu = [%s]' % ', '.join(map(lambda x: '%.5f' % x, mu)))
-        print('\t  sigma diagonal = [%s]' % ', '.join(map(lambda x: '%.5f' % x, np.diag(sigma))))
+        print('--- mu = [%s]' % ', '.join(map(lambda x: '%.5f' % x, mu)))
+        print('--- sigma diagonal = [%s]' % ', '.join(map(lambda x: '%.5f' % x, np.diag(sigma))))
 
     return mu, sigma
 
@@ -213,7 +213,7 @@ def maximisation(data, roi, mu, sigma, verbose=1):
         )
     if verbose > 1:
         print(
-            '\t  right_range [%.2e, %.2e] / left value (cov det) = %.2e (%.2e)' % (
+            '--- right_range [%.2e, %.2e] / left value (cov det) = %.2e (%.2e)' % (
                 np.min(right), np.max(right), left, sigma_det
             )
         )
@@ -227,7 +227,7 @@ def tissue_pve(
         images,
         mask,
         similarity,
-        atlases_pr,
+        atlases_names,
         path=None,
         patient='',
         timepoint='',
@@ -245,7 +245,7 @@ def tissue_pve(
     :param images: List of paths to the images to be used for segmentation.
     :param mask: Path to the mask of the brain.
     :param similarity: Path to the atlas similarity image.
-    :param atlases_pr: Probabilistic atlases.
+    :param atlases_names: Probabilistic atlases.
     :param path: Path where the output will be saved.
     :param patient: Name of the patient being processed.
     :param timepoint: Timepoint of the patient.
@@ -276,7 +276,8 @@ def tissue_pve(
 
     patch_half = tuple(map(lambda ps: ps/2, patch_size))
 
-    prnii = load_nii(atlases_pr[0])
+    prnii = load_nii(atlases_names[0])
+    atlases_pr = map(lambda name: load_nii(name).get_data(), atlases_names)
     masknii = load_nii(mask)
     mask_im = masknii.get_data()
     flair = load_nii(images[-1]).get_data()
@@ -287,10 +288,8 @@ def tissue_pve(
     [x, y, z] = np.stack(centers, axis=1)
 
     '''Tissue segmentation'''
-    if verbose > 0:
-        print_message(
-            '- Segmentation start - %s (%s)' % (timepoint, patient)
-        )
+    if verbose > 1:
+        print('- Segmentation start - %s (%s)' % (timepoint, patient))
     if find_file('brain.nii.gz', path) is None:
         # Init
         for a in atlases_pr:
@@ -299,8 +298,8 @@ def tissue_pve(
         [slices_x, slices_y, slices_z] = slicing(new_centers, patch_size)
 
         # Partial volume atlas creation and atlas probability normalisation
-        if verbose > 0:
-            print_message('- Partial volume class atlas creation')
+        if verbose > 1:
+            print('- Partial volume class atlas creation')
 
         # Now we'll create the partial volume atlases. That means that we need
         # to merge the atlases of both classes, and renormalize everything.
@@ -316,12 +315,12 @@ def tissue_pve(
                     atlases
                 )
             )
-            print_message('-- initial atlas ranges = %s)' % iapr_s)
+            print('-- initial atlas ranges = %s)' % iapr_s)
 
         # Here we renormalize the probabilities.
         atlases_sum = np.sum(atlases, axis=0)
         if verbose > 1:
-            print_message(
+            print(
                 '-- atlas sum ranges = [%.5f, %.5f]' % (
                     atlases_sum.min(), atlases_sum.max()
                 )
@@ -336,12 +335,12 @@ def tissue_pve(
                     atlases
                 )
             )
-            print_message('-- atlas ranges = %s)' % apr_s)
+            print('-- atlas ranges = %s)' % apr_s)
 
         # First we create the neighbourhood priors as stated on the paper. These are initial priors and
         # they are computed differently for pure and partial volume classes. These values need to be
         # updated at each step.
-        if verbose > 0:
+        if verbose > 1:
             print('- Neighborhood priors (initial)')
         npr = map(np.zeros_like, atlases)
         pure_tissues = len(atlases)
@@ -372,8 +371,8 @@ def tissue_pve(
         # similarity image. Since they are constant, we'll compute them once only. In the C++ code
         # these maps were recomputed at each iteration. We'll just do it once here.
         # Pure tissue classes
-        if verbose > 0:
-            print_message('- Atlas priors (initial)')
+        if verbose > 1:
+            print('- Atlas priors (initial)')
         apr = map(lambda pr_i: pr_i * similarity, atlases)
 
         # Finally we create the initial posterior probabilities. This are defined by the Gauss
@@ -383,7 +382,7 @@ def tissue_pve(
         # the next iterations. For convenience I'm keeping expectation and maximisation as functions
         # for the current function. They are before the loop for better readability.
         # Pure tissue classes
-        if verbose > 0:
+        if verbose > 1:
             print('- Posterior probabilities (initial)')
         ppr = map(np.copy, atlases)
         if verbose > 1:
@@ -393,7 +392,7 @@ def tissue_pve(
                     ppr
                 )
             )
-            print_message('\t  (ppr ranges = %s)' % ppr_s)
+            print('--  (ppr ranges = %s)' % ppr_s)
 
         # Initial values for loop
         sum_log_ant = -np.inf
@@ -409,7 +408,7 @@ def tissue_pve(
         while i < max_iter and np.fabs(sum_log_ant - sum_log) > np.finfo(float).eps:
             i += 1
             if verbose > 1:
-                print_message('---- Iteration %2d' % i)
+                print('-- Iteration %2d' % i)
             elif verbose > 0:
                 print('-- Iteration %2d' % i, end=' ')
                 sys.stdout.flush()
@@ -419,7 +418,7 @@ def tissue_pve(
             min_pure_ppr = np.min(map(np.max, ppr[:pure_tissues]))
             adaptive_th = min_pure_ppr / 2.0 if min_pure_ppr < th else th
             if verbose > 1:
-                print_message('--- expectation')
+                print('--- expectation')
             elif verbose > 0:
                 print('<expectation>', end=' ')
                 sys.stdout.flush()
@@ -441,7 +440,7 @@ def tissue_pve(
             # probability is computed using the same equation for both pure and partial classes.
             # Conditional probability (Gaussian)
             if verbose > 1:
-                print_message('--- maximisation')
+                print('--- maximisation')
             elif verbose > 0:
                 print('<maximisation>', end=' ')
                 sys.stdout.flush()
@@ -474,7 +473,7 @@ def tissue_pve(
                 ppr_i[ppr_i > 1] = 1
 
             if verbose > 1:
-                print_message('-- similarity range = [%.5f, %.5f]' % (
+                print('-- similarity range = [%.5f, %.5f]' % (
                     similarity.min(), similarity.max()
                 ))
                 npr_s = ' '.join(
@@ -483,35 +482,35 @@ def tissue_pve(
                         npr
                     )
                 )
-                print_message('--  (npr ranges = %s)' % npr_s)
+                print('--  (npr ranges = %s)' % npr_s)
                 apr_s = ' '.join(
                     map(
                         lambda pr_i: '[%.5f, %.5f]' % (pr_i.min(), pr_i.max()),
                         apr
                     )
                 )
-                print_message('--  (apr ranges = %s)' % apr_s)
+                print('--  (apr ranges = %s)' % apr_s)
                 prpr_s = ' '.join(
                     map(
                         lambda pr_i: '[%.5f, %.5f]' % (pr_i.min(), pr_i.max()),
                         priors
                     )
                 )
-                print_message('--  (priors ranges = %s)' % prpr_s)
+                print('--  (priors ranges = %s)' % prpr_s)
                 cpr_s = ' '.join(
                     map(
                         lambda pr_i: '[%.2e, %.2e]' % (pr_i.min(), pr_i.max()),
                         cpr
                     )
                 )
-                print_message('--  (conditional probability ranges = %s)' % cpr_s)
+                print('--  (conditional probability ranges = %s)' % cpr_s)
                 ppr_s = ' '.join(
                     map(
                         lambda pr_i: '[%f, %f]' % (pr_i.min(), pr_i.max()),
                         ppr
                     )
                 )
-                print('\t  (posterior probability ranges = %s)' % ppr_s)
+                print('-- (posterior probability ranges = %s)' % ppr_s)
 
             # We prepare the data for the next iteration
             npr_values = map(
@@ -542,7 +541,7 @@ def tissue_pve(
             sum_log_ant = sum_log
             sum_log = np.sum(map(lambda pr_i: np.sum(np.log(pr_i[pr_i > 0])), ppr))
             if verbose > 1:
-                print_message('-- Log-likelihood = %.2e' % sum_log)
+                print('-- Log-likelihood = %.2e' % sum_log)
             elif verbose > 0:
                 print('log-likelihood = %.2e' % sum_log)
 
@@ -558,13 +557,13 @@ def tissue_pve(
             print_message('- Lesion segmentation')
         flair_roi = flair[brain == 2]
         if verbose > 1:
-            print_message('-- Threshold estimation')
+            print('-- Threshold estimation')
         mu = flair_roi.mean()
         sigma = flair_roi.std()
 
         t = mu + alpha * sigma
         if verbose > 1:
-            print_message('-- Threshold: %f (%f + %f * %f)' % (t, mu, alpha, sigma))
+            print('-- Threshold: %f (%f + %f * %f)' % (t, mu, alpha, sigma))
 
         wml = (sitk.GetArrayFromImage(flair) * mask_im) > t
         brain[wml] = brain.max() + 1
