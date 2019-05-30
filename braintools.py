@@ -579,7 +579,7 @@ def tissue_pve(
         if verbose > 1:
             print('-- Threshold: %f (%f + %f * %f)' % (t, mu, alpha, sigma))
 
-        wml = (sitk.GetArrayFromImage(flair) * mask) > t
+        wml = (flair * mask) > t
         brain[wml] = brain.max() + 1
 
         masknii.get_data()[:] = brain
