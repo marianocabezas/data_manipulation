@@ -99,10 +99,6 @@ def atlas_registration(
             reference, os.path.join(path, 'structures_affine.nii.gz'),
             df, interpolation='nn', path=path, name='atlas_ventricles'
         )
-    atlases_affine = map(
-        lambda i: os.path.join(path, 'atlas_affine_pr%d' % i),
-        range(len(atlases_pr))
-    )
     map(
         lambda (i, pr_i): sitk.itkwarp(
             reference, pr_i, df,
