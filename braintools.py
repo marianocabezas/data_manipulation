@@ -285,7 +285,7 @@ def tissue_pve(
         lambda name: load_nii(name).get_data().astype(np.float32),
         image_names
     )
-    similarity_im = load_nii(similarity_name).astype(np.bool32)
+    similarity = load_nii(similarity_name).get_data().astype(np.float32)
     masknii = load_nii(mask_name)
     mask = masknii.get_data()
     flair = load_nii(image_names[-1]).get_data()
@@ -381,7 +381,7 @@ def tissue_pve(
         # Pure tissue classes
         if verbose > 1:
             print('- Atlas priors (initial)')
-        apr = map(lambda pr_i: pr_i * similarity_im, atlases)
+        apr = map(lambda pr_i: pr_i * similarity, atlases)
 
         # Finally we create the initial posterior probabilities. This are defined by the Gauss
         # distribution probability function. For pure tissues we estimate the mu and sigma from
@@ -464,7 +464,7 @@ def tissue_pve(
             )
             # Priors: Atlas weighted by similarity + Neighbourhood weighted by inverse similarity
             priors = map(
-                lambda (apr_i, pr_i): apr_i + (1 - similarity_im) * pr_i,
+                lambda (apr_i, pr_i): apr_i + (1 - similarity) * pr_i,
                 zip(apr, npr)
             )
             # Posterior probability = cpr * priors
@@ -482,7 +482,7 @@ def tissue_pve(
 
             if verbose > 1:
                 print('-- similarity range = [%.5f, %.5f]' % (
-                    similarity_im.min(), similarity_im.max()
+                    similarity.min(), similarity.max()
                 ))
                 npr_s = ' '.join(
                     map(
