@@ -2,6 +2,34 @@ from __future__ import print_function
 import time
 import os
 import re
+from itertools import product
+import numpy as np
+
+
+def slicing(center_list, size):
+    """
+
+    :param center_list:
+    :param size:
+    :return:
+    """
+    half_size = tuple(map(lambda ps: ps/2, size))
+    ranges = map(
+        lambda center: map(
+            lambda (c_idx, p_idx, s_idx): range(
+                np.max([c_idx - p_idx, 0]), c_idx + (s_idx - p_idx)
+            ),
+            zip(center, half_size, size)),
+        center_list
+    )
+    slices = np.concatenate(
+        map(
+            lambda x: np.stack(list(product(*x)), axis=1),
+            ranges
+        ),
+        axis=1
+    )
+    return slices
 
 
 def find_file(name, dirname):
