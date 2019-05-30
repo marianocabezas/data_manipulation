@@ -224,10 +224,10 @@ def maximisation(data, roi, mu, sigma, verbose=1):
 
 
 def tissue_pve(
-        images,
-        mask,
-        similarity,
-        atlases_names,
+        image_names,
+        mask_name,
+        similarity_name,
+        atlas_names,
         path=None,
         patient='',
         timepoint='',
@@ -242,10 +242,10 @@ def tissue_pve(
     Function that performs atlas registration and tissue segmentation using a
      probabilistic atlas that differentiates between cortical CSF and the
      ventricles.
-    :param images: List of paths to the images to be used for segmentation.
-    :param mask: Path to the mask of the brain.
-    :param similarity: Path to the atlas similarity image.
-    :param atlases_names: Probabilistic atlases.
+    :param image_names: List of paths to the images to be used for segmentation.
+    :param mask_name: Path to the mask of the brain.
+    :param similarity_name: Path to the atlas similarity image.
+    :param atlas_names: Probabilistic atlases.
     :param path: Path where the output will be saved.
     :param patient: Name of the patient being processed.
     :param timepoint: Timepoint of the patient.
@@ -276,14 +276,22 @@ def tissue_pve(
 
     patch_half = tuple(map(lambda ps: ps/2, patch_size))
 
-    prnii = load_nii(atlases_names[0])
-    atlases_pr = map(lambda name: load_nii(name).get_data(), atlases_names)
-    masknii = load_nii(mask)
-    mask_im = masknii.get_data()
-    flair = load_nii(images[-1]).get_data()
+    prnii = load_nii(atlas_names[0])
+    atlases_pr = map(
+        lambda name: load_nii(name).get_data().astype(np.float32),
+        atlas_names
+    )
+    images = map(
+        lambda name: load_nii(name).get_data().astype(np.float32),
+        image_names
+    )
+    similarity_im = load_nii(similarity_name).astype(np.bool32)
+    masknii = load_nii(mask_name)
+    mask = masknii.get_data()
+    flair = load_nii(image_names[-1]).get_data()
     centers = map(
         lambda idx: tuple(idx),
-        np.stack(np.nonzero(mask_im), axis=1)
+        np.stack(np.nonzero(mask), axis=1)
     )
     [x, y, z] = np.stack(centers, axis=1)
 
@@ -373,7 +381,7 @@ def tissue_pve(
         # Pure tissue classes
         if verbose > 1:
             print('- Atlas priors (initial)')
-        apr = map(lambda pr_i: pr_i * similarity, atlases)
+        apr = map(lambda pr_i: pr_i * similarity_im, atlases)
 
         # Finally we create the initial posterior probabilities. This are defined by the Gauss
         # distribution probability function. For pure tissues we estimate the mu and sigma from
@@ -447,7 +455,7 @@ def tissue_pve(
             cpr = map(
                 lambda (mu_i, sigma_i): maximisation(
                     images,
-                    mask_im,
+                    mask,
                     mu_i,
                     sigma_i,
                     verbose
@@ -456,12 +464,12 @@ def tissue_pve(
             )
             # Priors: Atlas weighted by similarity + Neighbourhood weighted by inverse similarity
             priors = map(
-                lambda (apr_i, pr_i): apr_i + (1 - similarity) * pr_i,
+                lambda (apr_i, pr_i): apr_i + (1 - similarity_im) * pr_i,
                 zip(apr, npr)
             )
             # Posterior probability = cpr * priors
             ppr = map(
-                lambda (cpr_i, prior_i): mask_im * cpr_i * prior_i,
+                lambda (cpr_i, prior_i): mask * cpr_i * prior_i,
                 zip(cpr, priors)
             )
             # Posterior are normalised with the sum of the probabilities for each class
@@ -474,7 +482,7 @@ def tissue_pve(
 
             if verbose > 1:
                 print('-- similarity range = [%.5f, %.5f]' % (
-                    similarity.min(), similarity.max()
+                    similarity_im.min(), similarity_im.max()
                 ))
                 npr_s = ' '.join(
                     map(
@@ -539,7 +547,9 @@ def tissue_pve(
 
             # Update the objective function
             sum_log_ant = sum_log
-            sum_log = np.sum(map(lambda pr_i: np.sum(np.log(pr_i[pr_i > 0])), ppr))
+            sum_log = np.sum(
+                map(lambda pr_i: np.sum(np.log(pr_i[pr_i > 0])), ppr)
+            )
             if verbose > 1:
                 print('-- Log-likelihood = %.2e' % sum_log)
             elif verbose > 0:
@@ -550,7 +560,9 @@ def tissue_pve(
             prnii.get_data()[:] = pr
             prnii.to_filename(os.path.join(path, 'tissue_pr%d.nii.gz' % i))
 
-        brain = np.squeeze(np.argmax(ppr, axis=0) + 1).astype(mask_im.dtype) * mask_im
+        brain = np.squeeze(
+            np.argmax(ppr, axis=0) + 1
+        ).astype(mask.dtype) * mask
 
         # We'll find lesions by thresholding.
         if verbose > 0:
@@ -565,7 +577,7 @@ def tissue_pve(
         if verbose > 1:
             print('-- Threshold: %f (%f + %f * %f)' % (t, mu, alpha, sigma))
 
-        wml = (sitk.GetArrayFromImage(flair) * mask_im) > t
+        wml = (sitk.GetArrayFromImage(flair) * mask) > t
         brain[wml] = brain.max() + 1
 
         masknii.get_data()[:] = brain
