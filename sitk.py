@@ -3,21 +3,7 @@ import SimpleITK as sitk
 import os
 import re
 import numpy as np
-
-
-def find_file(name, dirname):
-    """
-
-    :param name:
-    :param dirname:
-    :return:
-    """
-    result = filter(
-        lambda x: not os.path.isdir(x) and re.search(name, x),
-        os.listdir(dirname)
-    )
-
-    return result[0] if result else None
+from utils import find_file
 
 
 def print_current(reg_method, tf):
