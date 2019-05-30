@@ -61,13 +61,12 @@ def atlas_registration(
             reference, structures, affine, interpolation='nn',
             path=path, name='structures_affine'
         )
-    atlases_affine = map('atlas_affine_pr%d.nii.gz')
     map(
-        lambda (pr_i, name): sitk.itkresample(
-            reference, atlases_affine, affine,
-            path=path, name=name
+        lambda (pr_i, i): sitk.itkresample(
+            reference, atlases_pr, affine,
+            path=path, name='atlas_affine_pr%d' % i
         ),
-        zip(atlases_pr, atlases_affine)
+        zip(atlases_pr, range(len(atlases_pr)))
     )
 
     # Histogram matching
@@ -100,6 +99,10 @@ def atlas_registration(
             reference, os.path.join(path, 'structures_affine.nii.gz'),
             df, interpolation='nn', path=path, name='atlas_ventricles'
         )
+    atlases_affine = map(
+        lambda i: os.path.join(path, 'atlas_affine_pr%d' % i),
+        range(len(atlases_pr))
+    )
     map(
         lambda (i, pr_i): sitk.itkwarp(
             reference, atlases_affine, df,
