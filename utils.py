@@ -6,6 +6,35 @@ from itertools import product
 import numpy as np
 
 
+"""
+Utility functions
+"""
+
+
+def color_codes():
+    """
+    Function that returns a custom dictionary with ASCII codes related to
+    colors.
+    :return: Custom dictionary with ASCII codes for terminal colors.
+    """
+    codes = {
+        'nc': '\033[0m',
+        'b': '\033[1m',
+        'k': '\033[0m',
+        '0.25': '\033[30m',
+        'dgy': '\033[30m',
+        'r': '\033[31m',
+        'g': '\033[32m',
+        'gc': '\033[32m;0m',
+        'bg': '\033[32;1m',
+        'y': '\033[33m',
+        'c': '\033[36m',
+        '0.75': '\033[37m',
+        'lgy': '\033[37m',
+    }
+    return codes
+
+
 def slicing(center_list, size):
     """
 
