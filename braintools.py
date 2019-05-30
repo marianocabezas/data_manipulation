@@ -63,7 +63,7 @@ def atlas_registration(
         )
     map(
         lambda (pr_i, i): sitk.itkresample(
-            reference, atlases_pr, affine,
+            reference, pr_i, affine,
             path=path, name='atlas_affine_pr%d' % i
         ),
         zip(atlases_pr, range(len(atlases_pr)))
