@@ -315,7 +315,7 @@ def tissue_pve(
         # to merge the atlases of both classes, and renormalize everything.
         # Remember: The sum of all atlases for a given voxel should be 1.
         atlases = atlases_pr + map(
-            lambda (i0, i1): atlases_pr[i0] + atlases_pr[i1] / 2.0,
+            lambda (i0, i1): (atlases_pr[i0] + atlases_pr[i1]) / 2.0,
             pv_classes
         )
         if verbose > 1:
