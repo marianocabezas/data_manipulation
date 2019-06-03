@@ -462,12 +462,12 @@ def tissue_pve(
             )
 
             pure_params = [None] * pure_tissues
-            for i, classes in enumerate(mixed_classes):
+            for k, classes in enumerate(mixed_classes):
                 if isinstance(classes, tuple) or isinstance(classes, list):
                     for c in classes:
-                        pure_params[c] = pure_unique_params[i]
+                        pure_params[c] = pure_unique_params[k]
                 else:
-                    pure_params[classes] = pure_unique_params[i]
+                    pure_params[classes] = pure_unique_params[k]
 
             pv_params = map(
                 lambda (i0, i1): tuple(
