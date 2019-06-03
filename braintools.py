@@ -261,7 +261,13 @@ def tissue_pve(
     :param alpha: Parameter for the threshold estimation during the "lesion
      segmentation" thresholding.
     :param pv_classes: List of tuple pairs of values that represent the tissue
-     classes. 0: Ventricles-CSF, 1: External-CSF, 2: GM, 3: WM.
+     classes. For example, 0: Ventricles-CSF, 1: External-CSF, 2: GM, 3: WM.
+    :param mixed_classes: List of the subclasses that pertain to the same
+     tissue class. For example, if we assume that the ventricals and external
+     CSF are classes 0 and 1, we would have a mixed class (0, 1). Non-mixed
+     classes are defined by the index of the prior atlas. For example, if we
+     consider the example defined in pv_classes, the mixed_classes would be:
+     [(0, 1), 2, 3] -> (0, 1) for CSF, 2 for GM and 3 for WM.
     :param verbose: Verbose levels for this tool. The minimum value must be 1.
      For this level of verbosity, only "required" messages involving each step
      and likelihood will be shown. For the next level, various debugging
