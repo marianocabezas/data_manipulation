@@ -235,7 +235,8 @@ def tissue_pve(
         th=0.75,
         max_iter=10,
         alpha=2.0,
-        pv_classes=list([(1, 2)]),
+        pv_classes=None,
+        mixed_classes=None,
         verbose=1,
 ):
     """
@@ -273,6 +274,10 @@ def tissue_pve(
         print_message(
             'Tissue segmentation - %s (%s)' % (timepoint, patient)
         )
+    if pv_classes is None:
+        pv_classes = []
+    if mixed_classes is None:
+        mixed_classes = range(len(atlas_names))
 
     patch_half = tuple(map(lambda ps: ps/2, patch_size))
 
@@ -353,7 +358,7 @@ def tissue_pve(
         if verbose > 1:
             print('- Neighborhood priors (initial)')
         npr = map(np.zeros_like, atlases)
-        pure_tissues = len(atlases)
+        pure_tissues = len(atlases_pr)
         padding = tuple(
             (idx, size - idx) for idx, size in zip(patch_half, patch_size)
         )
@@ -432,15 +437,39 @@ def tissue_pve(
             elif verbose > 0:
                 print('<expectation>', end=' ')
                 sys.stdout.flush()
-            pure_params = map(
-                lambda pr_i: expectation(images, pr_i, adaptive_th, verbose),
-                ppr[:pure_tissues]
+
+            pure_pr = map(
+                lambda classes: np.sum(
+                    map(
+                        lambda c: ppr[c],
+                        classes
+                    ),
+                    axis=0
+                ) if isinstance(classes, tuple) or isinstance(classes, list)
+                else ppr[classes],
+                mixed_classes
             )
+
+            pure_unique_params = map(
+                lambda pr_i: expectation(images, pr_i, adaptive_th, verbose),
+                pure_pr
+            )
+
+            pure_params = [None] * pure_tissues
+            for i, classes in enumerate(mixed_classes):
+                if isinstance(classes, tuple) or isinstance(classes, list):
+                    for c in classes:
+                        pure_params[c] = pure_unique_params[i]
+                else:
+                    pure_params[classes] = pure_unique_params[i]
+
             pv_params = map(
-                lambda (i0, i1): tuple(map(
-                    lambda (p0, p1): (p0 + p1) / 2,
-                    zip(pure_params[i0], pure_params[i1])
-                )),
+                lambda (i0, i1): tuple(
+                    map(
+                        lambda (p0, p1): (p0 + p1) / 2,
+                        zip(pure_params[i0], pure_params[i1])
+                    )
+                ),
                 pv_classes
             )
             params = pure_params + pv_params
