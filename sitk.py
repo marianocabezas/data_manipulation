@@ -126,6 +126,7 @@ def itkn4(
     :param image:
     :param path:
     :param name:
+    :param mask:
     :param max_iters:
     :param levels:
     :param cast:
