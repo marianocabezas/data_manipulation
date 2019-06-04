@@ -106,7 +106,7 @@ def atlas_registration(
         ),
         enumerate(
             map(
-                lambda i: 'atlas_affine_pr%d' % i,
+                lambda i: 'atlas_affine_pr%d.nii.gz' % i,
                 range(len(atlases_pr))
             )
         )
