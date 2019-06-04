@@ -319,7 +319,6 @@ def tissue_pve(
         # Init
         for a in atlases_pr:
             a[a < 0] = 0
-        new_centers = map(lambda center: map(add, center, patch_half), centers)
         pure_tissues = len(atlases_pr)
 
         # Partial volume atlas creation and atlas probability normalisation
@@ -398,7 +397,7 @@ def tissue_pve(
         # each class.
         if verbose > 1:
             print('- Membership priors (initial)')
-        mpr = np.sum(ppr, axis=0)
+        mpr = np.sum(np.array(ppr).reshape(len(ppr), -1), axis=1)
         mpr = mpr / np.sum(mpr)
 
         # Initial values for loop
@@ -465,10 +464,14 @@ def tissue_pve(
                 pv_classes
             )
             params = pure_params + pv_params
+
             # <Maximisation step>
-            # The conditional probability is computed using the Gaussian mixture model defined
-            # previously. Since the mean and covariance matrix are already updated, the conditional
-            # probability is computed using the same equation for both pure and partial classes.
+            # The conditional probability is computed using the Gaussian
+            # mixture model defined previously. Since the mean and covariance
+            # matrix are already updated, the conditional probability is
+            # computed using the same equation for both pure and partial
+            # classes.
+
             # Conditional probability (Gaussian)
             if verbose > 1:
                 print('--- maximisation')
@@ -485,7 +488,8 @@ def tissue_pve(
                 ),
                 params
             )
-            # Priors: Atlas weighted by similarity + Neighbourhood weighted by inverse similarity
+            # Priors: Atlas weighted by similarity + Neighbourhood weighted by
+            # inverse similarity
             priors = map(
                 lambda (apr_i, pr_i): apr_i + (1 - similarity) * pr_i,
                 zip(apr, mpr)
@@ -495,7 +499,8 @@ def tissue_pve(
                 lambda (cpr_i, prior_i): mask * cpr_i * prior_i,
                 zip(cpr, priors)
             )
-            # Posterior are normalised with the sum of the probabilities for each class
+            # Posterior are normalised with the sum of the probabilities for
+            # each class
             sum_ppr = np.sum(ppr, axis=0)
             nonzero_pr = np.nonzero(sum_ppr > 0)
             for ppr_i in ppr:
@@ -539,7 +544,7 @@ def tissue_pve(
                 print('-- (posterior probability ranges = %s)' % ppr_s)
 
             # We prepare the data for the next iteration
-            mpr = np.sum(ppr, axis=0)
+            mpr = np.sum(np.array(ppr).reshape(len(ppr), -1), axis=1)
             mpr = mpr / np.sum(mpr)
 
             # Update the objective function
