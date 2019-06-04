@@ -90,7 +90,7 @@ def atlas_registration(
     )
     sitk.itkdemons(
         reference, atlas_matched, mask, path=path, name='atlas',
-        steps=100, sigma=1.5
+        steps=200, sigma=2
     )
 
     df = os.path.join(path, 'atlas_multidemons_deformation.nii.gz')
