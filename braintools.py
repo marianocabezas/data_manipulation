@@ -255,7 +255,6 @@ def maximisation(data, roi, mu, sigma, verbose=1):
 def tissue_pve(
         image_names,
         mask_name,
-        similarity_name,
         atlas_names,
         path=None,
         patient='',
@@ -273,7 +272,6 @@ def tissue_pve(
      ventricles.
     :param image_names: List of paths to the images to be used for segmentation.
     :param mask_name: Path to the mask of the brain.
-    :param similarity_name: Path to the atlas similarity image.
     :param atlas_names: Probabilistic atlases.
     :param path: Path where the output will be saved.
     :param patient: Name of the patient being processed.
@@ -323,7 +321,6 @@ def tissue_pve(
             image_names
         )
     )
-    similarity = load_nii(similarity_name).get_data().astype(np.float32)
     masknii = load_nii(mask_name)
     mask = masknii.get_data()
     flair = load_nii(image_names[-1]).get_data()
@@ -377,42 +374,7 @@ def tissue_pve(
             )
             print('-- atlas ranges = %s)' % apr_s)
 
-        # First, we create the neighbourhood priors as stated on the paper.
-        # These are initial priors and they are computed differently for
-        # pure and partial volume classes.
-        if verbose > 1:
-            print('- Neighborhood priors (initial)')
-        patch_size = (3, 3, 3)
-        patch_half = tuple(map(lambda ps: ps / 2, patch_size))
-        centers = map(lambda idx: tuple(idx), np.stack(np.nonzero(mask), axis=1))
-        [x, y, z] = np.stack(centers, axis=1)
-        new_centers = map(lambda center: map(add, center, patch_half), centers)
-        [slices_x, slices_y, slices_z] = slicing(new_centers, patch_size)
-        npr = map(np.zeros_like, atlases)
-        padding = tuple(
-            (idx, size - idx) for idx, size in zip(patch_half, patch_size)
-        )
-        padded_atlases = map(
-            lambda a_i: np.pad(a_i, padding, 'constant', constant_values=0.0),
-            atlases
-        )
-        npr_values = map(
-            lambda pr_i: np.mean(
-                np.stack(
-                    np.split(
-                        pr_i[slices_x, slices_y, slices_z],
-                        len(centers)
-                    ),
-                    axis=1
-                ),
-                axis=0
-            ),
-            padded_atlases
-        )
-        for npr_i, values in zip(npr, npr_values):
-            npr_i[x, y, z] = values
-
-        # Now, we create the atlas priors. These are constant and are
+        # First, we create the atlas priors. These are constant and are
         # computed using the atlas priors and the similarity image. Since
         # they are constant, we'll compute them once only. In the C++ code
         # these maps were recomputed at each iteration. We'll just do it once
@@ -420,7 +382,7 @@ def tissue_pve(
         # Pure tissue classes
         if verbose > 1:
             print('- Atlas priors (initial)')
-        apr = map(lambda pr_i: pr_i * similarity, atlases)
+        apr = map(np.copy, atlases)
 
         # Finally, we create the initial posterior probabilities. This are defined
         # by the Gauss distribution probability function. For pure tissues we
@@ -536,14 +498,10 @@ def tissue_pve(
             )
             # Priors: Atlas weighted by similarity + Neighbourhood weighted by
             # inverse similarity
-            priors = map(
-                lambda (apr_i, pr_i): apr_i + (1 - similarity) * pr_i,
-                zip(apr, npr)
-            )
             # Posterior probability = cpr * priors
             ppr = map(
                 lambda (cpr_i, prior_i): mask * cpr_i * prior_i,
-                zip(cpr, priors)
+                zip(cpr, apr)
             )
             # Posterior are normalised with the sum of the probabilities for
             # each class
@@ -555,15 +513,6 @@ def tissue_pve(
                 ppr_i[ppr_i > 1] = 1
 
             if verbose > 1:
-                print('-- similarity range = [%.5f, %.5f]' % (
-                    similarity.min(), similarity.max()
-                ))
-                npr_s = ' '.join(
-                    map(
-                        lambda pr_i: '[%.5f, %.5f]' % (pr_i.min(), pr_i.max()),
-                        npr
-                    )
-                )
                 print('--  (npr ranges = %s)' % npr_s)
                 apr_s = ' '.join(
                     map(
@@ -572,13 +521,6 @@ def tissue_pve(
                     )
                 )
                 print('--  (apr ranges = %s)' % apr_s)
-                prpr_s = ' '.join(
-                    map(
-                        lambda pr_i: '[%.5f, %.5f]' % (pr_i.min(), pr_i.max()),
-                        priors
-                    )
-                )
-                print('--  (priors ranges = %s)' % prpr_s)
                 cpr_s = ' '.join(
                     map(
                         lambda pr_i: '[%.2e, %.2e]' % (pr_i.min(), pr_i.max()),
