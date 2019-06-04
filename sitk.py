@@ -113,9 +113,9 @@ def itkwarp(
 
 def itkn4(
         image,
-        mask=None,
         path=None,
         name=None,
+        mask=None,
         max_iters=400,
         levels=1,
         cast=sitk.sitkFloat32,
