@@ -311,7 +311,6 @@ def tissue_pve(
         lambda idx: tuple(idx),
         np.stack(np.nonzero(mask), axis=1)
     )
-    [x, y, z] = np.stack(centers, axis=1)
 
     '''Tissue segmentation'''
     if verbose > 1:
@@ -321,7 +320,7 @@ def tissue_pve(
         for a in atlases_pr:
             a[a < 0] = 0
         new_centers = map(lambda center: map(add, center, patch_half), centers)
-        [slices_x, slices_y, slices_z] = slicing(new_centers, patch_size)
+        pure_tissues = len(atlases_pr)
 
         # Partial volume atlas creation and atlas probability normalisation
         if verbose > 1:
@@ -363,50 +362,24 @@ def tissue_pve(
             )
             print('-- atlas ranges = %s)' % apr_s)
 
-        # First we create the neighbourhood priors as stated on the paper. These are initial priors and
-        # they are computed differently for pure and partial volume classes. These values need to be
-        # updated at each step.
-        if verbose > 1:
-            print('- Neighborhood priors (initial)')
-        npr = map(np.zeros_like, atlases)
-        pure_tissues = len(atlases_pr)
-        padding = tuple(
-            (idx, size - idx) for idx, size in zip(patch_half, patch_size)
-        )
-        padded_atlases = map(
-            lambda a_i: np.pad(a_i, padding, 'constant', constant_values=0.0),
-            atlases
-        )
-        npr_values = map(
-            lambda pr_i: np.mean(
-                np.stack(
-                    np.split(
-                        pr_i[slices_x, slices_y, slices_z],
-                        len(centers)
-                    ),
-                    axis=1
-                ),
-                axis=0
-            ),
-            padded_atlases
-        )
-        for npr_i, values in zip(npr, npr_values):
-            npr_i[x, y, z] = values
-
-        # Now we create the atlas priors. These are constant and are computed using the atlas priors and the
-        # similarity image. Since they are constant, we'll compute them once only. In the C++ code
-        # these maps were recomputed at each iteration. We'll just do it once here.
+        # First, we create the atlas priors. These are constant and are
+        # computed using the atlas priors and the similarity image. Since
+        # they are constant, we'll compute them once only. In the C++ code
+        # these maps were recomputed at each iteration. We'll just do it once
+        # here.
         # Pure tissue classes
         if verbose > 1:
             print('- Atlas priors (initial)')
         apr = map(lambda pr_i: pr_i * similarity, atlases)
 
-        # Finally we create the initial posterior probabilities. This are defined by the Gauss
-        # distribution probability function. For pure tissues we estimate the mu and sigma from
-        # the data and the atlas priors. For the partial volumes we average them.
-        # However, for the initial estimate, we'll use the priors and we'll update cpr during
-        # the next iterations. For convenience I'm keeping expectation and maximisation as functions
-        # for the current function. They are before the loop for better readability.
+        # Now, we create the initial posterior probabilities. This are defined
+        # by the Gauss distribution probability function. For pure tissues we
+        # estimate the mu and sigma from the data and the atlas priors. For the
+        # partial volumes we average them.
+        # However, for the initial estimate, we'll use the priors and we'll
+        # update cpr during the next iterations. For convenience I'm keeping
+        # expectation and maximisation as functions for the current function.
+        # They are before the loop for better readability.
         # Pure tissue classes
         if verbose > 1:
             print('- Posterior probabilities (initial)')
@@ -419,6 +392,14 @@ def tissue_pve(
                 )
             )
             print('--  (ppr ranges = %s)' % ppr_s)
+
+        # Finally, we create the membership priors as stated on the paper.
+        # These is just the proportion (taking probabilities into account) for
+        # each class.
+        if verbose > 1:
+            print('- Membership priors (initial)')
+        mpr = np.sum(ppr, axis=0)
+        mpr = mpr / np.sum(mpr)
 
         # Initial values for loop
         sum_log_ant = -np.inf
@@ -507,7 +488,7 @@ def tissue_pve(
             # Priors: Atlas weighted by similarity + Neighbourhood weighted by inverse similarity
             priors = map(
                 lambda (apr_i, pr_i): apr_i + (1 - similarity) * pr_i,
-                zip(apr, npr)
+                zip(apr, mpr)
             )
             # Posterior probability = cpr * priors
             ppr = map(
@@ -526,13 +507,8 @@ def tissue_pve(
                 print('-- similarity range = [%.5f, %.5f]' % (
                     similarity.min(), similarity.max()
                 ))
-                npr_s = ' '.join(
-                    map(
-                        lambda pr_i: '[%.5f, %.5f]' % (pr_i.min(), pr_i.max()),
-                        npr
-                    )
-                )
-                print('--  (npr ranges = %s)' % npr_s)
+                mpr_s = ', '.join(map(lambda pr_i: '%.5f', mpr))
+                print('-- mpr values = [%s]' % mpr_s)
                 apr_s = ' '.join(
                     map(
                         lambda pr_i: '[%.5f, %.5f]' % (pr_i.min(), pr_i.max()),
@@ -563,29 +539,8 @@ def tissue_pve(
                 print('-- (posterior probability ranges = %s)' % ppr_s)
 
             # We prepare the data for the next iteration
-            npr_values = map(
-                lambda pr_i: np.mean(
-                    np.stack(
-                        np.split(
-                            pr_i[slices_x, slices_y, slices_z],
-                            len(centers)
-                        ),
-                        axis=1
-                    ),
-                    axis=0
-                ),
-                map(
-                    lambda a_i: np.pad(
-                        a_i,
-                        padding,
-                        'constant',
-                        constant_values=0.0
-                    ),
-                    ppr
-                )
-            )
-            for npr_i, values in zip(npr, npr_values):
-                npr_i[x, y, z] = values
+            mpr = np.sum(ppr, axis=0)
+            mpr = mpr / np.sum(mpr)
 
             # Update the objective function
             sum_log_ant = sum_log
