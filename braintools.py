@@ -507,7 +507,7 @@ def tissue_pve(
                 print('-- similarity range = [%.5f, %.5f]' % (
                     similarity.min(), similarity.max()
                 ))
-                mpr_s = ', '.join(map(lambda pr_i: '%.5f', mpr))
+                mpr_s = ', '.join(map(lambda pr_i: '%.5f' % pr_i, mpr))
                 print('-- mpr values = [%s]' % mpr_s)
                 apr_s = ' '.join(
                     map(
