@@ -377,42 +377,7 @@ def tissue_pve(
             )
             print('-- atlas ranges = %s)' % apr_s)
 
-        # First, we create the neighbourhood priors as stated on the paper.
-        # These are initial priors and they are computed differently for
-        # pure and partial volume classes.
-        if verbose > 1:
-            print('- Neighborhood priors (initial)')
-        patch_size = (3, 3, 3)
-        patch_half = tuple(map(lambda ps: ps / 2, patch_size))
-        centers = map(lambda idx: tuple(idx), np.stack(np.nonzero(mask), axis=1))
-        [x, y, z] = np.stack(centers, axis=1)
-        new_centers = map(lambda center: map(add, center, patch_half), centers)
-        [slices_x, slices_y, slices_z] = slicing(new_centers, patch_size)
-        npr = map(np.zeros_like, atlases)
-        padding = tuple(
-            (idx, size - idx) for idx, size in zip(patch_half, patch_size)
-        )
-        padded_atlases = map(
-            lambda a_i: np.pad(a_i, padding, 'constant', constant_values=0.0),
-            atlases
-        )
-        npr_values = map(
-            lambda pr_i: np.mean(
-                np.stack(
-                    np.split(
-                        pr_i[slices_x, slices_y, slices_z],
-                        len(centers)
-                    ),
-                    axis=1
-                ),
-                axis=0
-            ),
-            padded_atlases
-        )
-        for npr_i, values in zip(npr, npr_values):
-            npr_i[x, y, z] = values
-
-        # Now, we create the atlas priors. These are constant and are
+        # First, we create the atlas priors. These are constant and are
         # computed using the atlas priors and the similarity image. Since
         # they are constant, we'll compute them once only. In the C++ code
         # these maps were recomputed at each iteration. We'll just do it once
@@ -422,7 +387,7 @@ def tissue_pve(
             print('- Atlas priors (initial)')
         apr = map(lambda pr_i: pr_i * similarity, atlases)
 
-        # Finally, we create the initial posterior probabilities. This are defined
+        # Now, we create the initial posterior probabilities. This are defined
         # by the Gauss distribution probability function. For pure tissues we
         # estimate the mu and sigma from the data and the atlas priors. For the
         # partial volumes we average them.
@@ -442,6 +407,16 @@ def tissue_pve(
                 )
             )
             print('--  (ppr ranges = %s)' % ppr_s)
+
+        # Finally, we create the membership priors as stated on the paper.
+        # These is just the proportion (taking probabilities into account) for
+        # each class.
+        if verbose > 1:
+            print('- Membership priors (initial)')
+        flat_pure_ppr = np.array(ppr[:pure_tissues]).reshape(pure_tissues, -1)
+        mppr = np.sum(flat_pure_ppr, axis=1)
+        mppr = mppr / np.sum(mppr)
+        mpr = np.concatenate([mppr, np.zeros(len(pv_classes))])
 
         # Initial values for loop
         sum_log_ant = -np.inf
@@ -538,7 +513,7 @@ def tissue_pve(
             # inverse similarity
             priors = map(
                 lambda (apr_i, pr_i): apr_i + (1 - similarity) * pr_i,
-                zip(apr, npr)
+                zip(apr, mpr)
             )
             # Posterior probability = cpr * priors
             ppr = map(
@@ -558,13 +533,8 @@ def tissue_pve(
                 print('-- similarity range = [%.5f, %.5f]' % (
                     similarity.min(), similarity.max()
                 ))
-                npr_s = ' '.join(
-                    map(
-                        lambda pr_i: '[%.5f, %.5f]' % (pr_i.min(), pr_i.max()),
-                        npr
-                    )
-                )
-                print('--  (npr ranges = %s)' % npr_s)
+                mpr_s = ', '.join(map(lambda pr_i: '%.5f' % pr_i, mpr))
+                print('--  (mpr values = [%s])' % mpr_s)
                 apr_s = ' '.join(
                     map(
                         lambda pr_i: '[%.5f, %.5f]' % (pr_i.min(), pr_i.max()),
@@ -593,6 +563,12 @@ def tissue_pve(
                     )
                 )
                 print('-- (posterior probability ranges = %s)' % ppr_s)
+
+            # We prepare the data for the next iteration
+            flat_pure_ppr = np.array(ppr[:pure_tissues]).reshape(pure_tissues, -1)
+            mpr = np.sum(flat_pure_ppr, axis=1)
+            mpr = mpr / np.sum(mpr)
+            np.concatenate([mpr, np.zeros(len(pv_classes))])
 
             # Update the objective function
             sum_log_ant = sum_log
