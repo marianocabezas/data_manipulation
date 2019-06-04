@@ -416,7 +416,7 @@ def tissue_pve(
         flat_pure_ppr = np.array(ppr[:pure_tissues]).reshape(pure_tissues, -1)
         mpr = np.sum(flat_pure_ppr, axis=1)
         mpr = mpr / np.sum(mpr)
-        np.concatenate(mpr, np.zeros(len(ppr) - pure_tissues))
+        np.concatenate(mpr, np.zeros(len(pv_classes)))
 
         # Initial values for loop
         sum_log_ant = -np.inf
@@ -568,7 +568,7 @@ def tissue_pve(
             flat_pure_ppr = np.array(ppr[:pure_tissues]).reshape(pure_tissues, -1)
             mpr = np.sum(flat_pure_ppr, axis=1)
             mpr = mpr / np.sum(mpr)
-            np.concatenate(mpr, np.zeros(len(ppr) - pure_tissues))
+            np.concatenate(mpr, np.zeros(len(pv_classes)))
 
             # Update the objective function
             sum_log_ant = sum_log
