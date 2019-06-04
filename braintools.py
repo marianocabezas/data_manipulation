@@ -410,8 +410,11 @@ def tissue_pve(
         ))
         i = 0
         if verbose > 0:
-            print_message('- Main EM loop (initial log likelihood = %.2e)' % sum_log)
-        while i < max_iter and np.fabs(sum_log_ant - sum_log) > np.finfo(float).eps:
+            print_message(
+                '- Main EM loop (initial log likelihood = %.2e)' % sum_log
+            )
+        eps = np.finfo(float).eps
+        while i < max_iter and np.fabs(sum_log_ant - sum_log) > eps:
             i += 1
             if verbose > 1:
                 print('-- Iteration %2d' % i)
@@ -419,8 +422,8 @@ def tissue_pve(
                 print('-- Iteration %2d' % i, end=' ')
                 sys.stdout.flush()
             # <Expectation step>
-            # The pure parameters are updated from the data, while the partial ones
-            # are updated using the pure ones.
+            # The pure parameters are updated from the data, while the partial
+            # ones are updated using the pure ones.
             min_pure_ppr = np.min(map(np.max, ppr[:pure_tissues]))
             adaptive_th = min_pure_ppr / 2.0 if min_pure_ppr < th else th
             if verbose > 1:
@@ -513,7 +516,7 @@ def tissue_pve(
                     similarity.min(), similarity.max()
                 ))
                 mpr_s = ', '.join(map(lambda pr_i: '%.5f' % pr_i, mpr))
-                print('-- mpr values = [%s]' % mpr_s)
+                print('--  (mpr values = [%s])' % mpr_s)
                 apr_s = ' '.join(
                     map(
                         lambda pr_i: '[%.5f, %.5f]' % (pr_i.min(), pr_i.max()),
