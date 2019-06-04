@@ -255,7 +255,6 @@ def maximisation(data, roi, mu, sigma, verbose=1):
 def tissue_pve(
         image_names,
         mask_name,
-        similarity_name,
         atlas_names,
         path=None,
         patient='',
@@ -273,7 +272,6 @@ def tissue_pve(
      ventricles.
     :param image_names: List of paths to the images to be used for segmentation.
     :param mask_name: Path to the mask of the brain.
-    :param similarity_name: Path to the atlas similarity image.
     :param atlas_names: Probabilistic atlases.
     :param path: Path where the output will be saved.
     :param patient: Name of the patient being processed.
@@ -323,7 +321,6 @@ def tissue_pve(
             image_names
         )
     )
-    similarity = load_nii(similarity_name).get_data().astype(np.float32)
     masknii = load_nii(mask_name)
     mask = masknii.get_data()
     flair = load_nii(image_names[-1]).get_data()
@@ -385,9 +382,9 @@ def tissue_pve(
         # Pure tissue classes
         if verbose > 1:
             print('- Atlas priors (initial)')
-        apr = map(lambda pr_i: pr_i * similarity, atlases)
+        apr = map(np.copy, atlases)
 
-        # Now, we create the initial posterior probabilities. This are defined
+        # Finally, we create the initial posterior probabilities. This are defined
         # by the Gauss distribution probability function. For pure tissues we
         # estimate the mu and sigma from the data and the atlas priors. For the
         # partial volumes we average them.
@@ -407,16 +404,6 @@ def tissue_pve(
                 )
             )
             print('--  (ppr ranges = %s)' % ppr_s)
-
-        # Finally, we create the membership priors as stated on the paper.
-        # These is just the proportion (taking probabilities into account) for
-        # each class.
-        if verbose > 1:
-            print('- Membership priors (initial)')
-        flat_pure_ppr = np.array(ppr[:pure_tissues]).reshape(pure_tissues, -1)
-        mppr = np.sum(flat_pure_ppr, axis=1)
-        mppr = mppr / np.sum(mppr)
-        mpr = np.concatenate([mppr, np.zeros(len(pv_classes))])
 
         # Initial values for loop
         sum_log_ant = -np.inf
@@ -511,14 +498,10 @@ def tissue_pve(
             )
             # Priors: Atlas weighted by similarity + Neighbourhood weighted by
             # inverse similarity
-            priors = map(
-                lambda (apr_i, pr_i): apr_i + (1 - similarity) * pr_i,
-                zip(apr, mpr)
-            )
             # Posterior probability = cpr * priors
             ppr = map(
                 lambda (cpr_i, prior_i): mask * cpr_i * prior_i,
-                zip(cpr, priors)
+                zip(cpr, apr)
             )
             # Posterior are normalised with the sum of the probabilities for
             # each class
@@ -530,11 +513,7 @@ def tissue_pve(
                 ppr_i[ppr_i > 1] = 1
 
             if verbose > 1:
-                print('-- similarity range = [%.5f, %.5f]' % (
-                    similarity.min(), similarity.max()
-                ))
-                mpr_s = ', '.join(map(lambda pr_i: '%.5f' % pr_i, mpr))
-                print('--  (mpr values = [%s])' % mpr_s)
+                print('--  (npr ranges = %s)' % npr_s)
                 apr_s = ' '.join(
                     map(
                         lambda pr_i: '[%.5f, %.5f]' % (pr_i.min(), pr_i.max()),
@@ -542,13 +521,6 @@ def tissue_pve(
                     )
                 )
                 print('--  (apr ranges = %s)' % apr_s)
-                prpr_s = ' '.join(
-                    map(
-                        lambda pr_i: '[%.5f, %.5f]' % (pr_i.min(), pr_i.max()),
-                        priors
-                    )
-                )
-                print('--  (priors ranges = %s)' % prpr_s)
                 cpr_s = ' '.join(
                     map(
                         lambda pr_i: '[%.2e, %.2e]' % (pr_i.min(), pr_i.max()),
@@ -563,12 +535,6 @@ def tissue_pve(
                     )
                 )
                 print('-- (posterior probability ranges = %s)' % ppr_s)
-
-            # We prepare the data for the next iteration
-            flat_pure_ppr = np.array(ppr[:pure_tissues]).reshape(pure_tissues, -1)
-            mpr = np.sum(flat_pure_ppr, axis=1)
-            mpr = mpr / np.sum(mpr)
-            np.concatenate([mpr, np.zeros(len(pv_classes))])
 
             # Update the objective function
             sum_log_ant = sum_log
