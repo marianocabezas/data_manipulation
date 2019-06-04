@@ -182,12 +182,13 @@ def atlas_registration(
         if find_file('atlas_similarity.nii.gz', path) is None:
             t1nii = load_nii(reference)
             t1 = t1nii.get_data()
+            mask_im = load_nii(mask).get_data()
             atlas_demons = load_nii(
                 os.path.join(path, 'atlas_demons.nii.gz')
             ).get_data()
 
             # Everything on the official similarity will be based on subtraction.
-            sub = np.abs(t1 - atlas_demons)
+            sub = np.abs(t1 - atlas_demons) * mask_im
             similarity = 1 - sub / sub.max()
 
             # Finally, we just compute cross-correlation on the patches and
@@ -313,8 +314,6 @@ def tissue_pve(
     if mixed_classes is None:
         mixed_classes = range(len(atlas_names))
 
-    patch_half = tuple(map(lambda ps: ps/2, patch_size))
-
     prnii = load_nii(atlas_names[0])
     atlases_pr = map(
         lambda name: load_nii(name).get_data().astype(np.float32),
@@ -330,10 +329,6 @@ def tissue_pve(
     masknii = load_nii(mask_name)
     mask = masknii.get_data()
     flair = load_nii(image_names[-1]).get_data()
-    centers = map(
-        lambda idx: tuple(idx),
-        np.stack(np.nonzero(mask), axis=1)
-    )
 
     '''Tissue segmentation'''
     if verbose > 1:
@@ -420,8 +415,9 @@ def tissue_pve(
         # each class.
         if verbose > 1:
             print('- Membership priors (initial)')
-        mpr = np.sum(np.array(ppr).reshape(len(ppr), -1), axis=1)
+        mpr = np.sum(np.array(ppr[:pure_tissues]).reshape(len(ppr), -1), axis=1)
         mpr = mpr / np.sum(mpr)
+        np.concatenate(mpr, np.zeros(len(ppr) - pure_tissues))
 
         # Initial values for loop
         sum_log_ant = -np.inf
@@ -570,8 +566,9 @@ def tissue_pve(
                 print('-- (posterior probability ranges = %s)' % ppr_s)
 
             # We prepare the data for the next iteration
-            mpr = np.sum(np.array(ppr).reshape(len(ppr), -1), axis=1)
+            mpr = np.sum(np.array(ppr[:pure_tissues]).reshape(len(ppr), -1), axis=1)
             mpr = mpr / np.sum(mpr)
+            np.concatenate(mpr, np.zeros(len(ppr) - pure_tissues))
 
             # Update the objective function
             sum_log_ant = sum_log
