@@ -122,8 +122,8 @@ def atlas_registration(
         print_message(
             'Atlas similarity - %s (%s)' % (timepoint, patient)
         )
-    similarity_name = os.path.join(path, 'atlas_similarity.nii.gz')
-    if find_file('atlas_similarity.nii.gz', path) is None:
+
+    if find_file('atlas_similarity_xcor.nii.gz', path) is None:
         t1nii = load_nii(reference)
         t1 = t1nii.get_data()
         atlas_demons = load_nii(
@@ -170,7 +170,7 @@ def atlas_registration(
         slices_xcorr[slices_xcorr > 1] = 1
         similarity[x, y, z] = slices_xcorr
         t1nii.get_data()[:] = similarity
-        t1nii.to_filename(similarity_name)
+        t1nii.to_filename(os.path.join(path, 'atlas_similarity_xcor.nii.gz'))
 
         if verbose > 1:
             print(
@@ -178,6 +178,29 @@ def atlas_registration(
                     similarity.min(), similarity.max()
                 )
             )
+
+        if find_file('atlas_similarity.nii.gz', path) is None:
+            t1nii = load_nii(reference)
+            t1 = t1nii.get_data()
+            atlas_demons = load_nii(
+                os.path.join(path, 'atlas_demons.nii.gz')
+            ).get_data()
+
+            # Everything on the official similarity will be based on subtraction.
+            sub = np.abs(t1 - atlas_demons)
+            similarity = 1 - sub / sub.max()
+
+            # Finally, we just compute cross-correlation on the patches and
+            # save the information inside the voxel
+            t1nii.get_data()[:] = similarity
+            t1nii.to_filename(os.path.join(path, 'atlas_similarity.nii.gz'))
+
+            if verbose > 1:
+                print(
+                    '- Similarity range = [%f, %f]' % (
+                        similarity.min(), similarity.max()
+                    )
+                )
 
 
 def expectation(data, probability, threshold=0.0, verbose=1):
