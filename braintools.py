@@ -414,9 +414,9 @@ def tissue_pve(
         if verbose > 1:
             print('- Membership priors (initial)')
         flat_pure_ppr = np.array(ppr[:pure_tissues]).reshape(pure_tissues, -1)
-        mpr = np.sum(flat_pure_ppr, axis=1)
-        mpr = mpr / np.sum(mpr)
-        np.concatenate([mpr, np.zeros(len(pv_classes))])
+        mppr = np.sum(flat_pure_ppr, axis=1)
+        mppr = mppr / np.sum(mppr)
+        mpr = np.concatenate([mppr, np.zeros(len(pv_classes))])
 
         # Initial values for loop
         sum_log_ant = -np.inf
@@ -566,9 +566,9 @@ def tissue_pve(
 
             # We prepare the data for the next iteration
             flat_pure_ppr = np.array(ppr[:pure_tissues]).reshape(pure_tissues, -1)
-            mpr = np.sum(flat_pure_ppr, axis=1)
-            mpr = mpr / np.sum(mpr)
-            np.concatenate([mpr, np.zeros(len(pv_classes))])
+            mppr = np.sum(flat_pure_ppr, axis=1)
+            mppr = mppr / np.sum(mppr)
+            mpr = np.concatenate([mppr, np.zeros(len(pv_classes))])
 
             # Update the objective function
             sum_log_ant = sum_log
