@@ -513,7 +513,6 @@ def tissue_pve(
                 ppr_i[ppr_i > 1] = 1
 
             if verbose > 1:
-                print('--  (npr ranges = %s)' % npr_s)
                 apr_s = ' '.join(
                     map(
                         lambda pr_i: '[%.5f, %.5f]' % (pr_i.min(), pr_i.max()),
