@@ -113,6 +113,7 @@ def itkwarp(
 
 def itkn4(
         image,
+        mask=None,
         path=None,
         name=None,
         max_iters=400,
@@ -141,7 +142,13 @@ def itkn4(
     if verbose > 1:
         print('\t  Image: ' + os.path.join(path, name + '_corrected.nii.gz'))
     if path is None or name is None or find_file(name + '_corrected.nii.gz', path) is None:
-        mask = sitk.OtsuThreshold(image, 0, 1, 200)
+        if mask is not None:
+            if isinstance(mask, basestring):
+                mask = sitk.ReadImage(mask)
+            elif isinstance(mask, np.ndarray):
+                mask = sitk.GetImageFromArray(mask)
+        else:
+            mask = sitk.OtsuThreshold(image, 0, 1, 200)
         image = sitk.Cast(image, cast)
         corrector = sitk.N4BiasFieldCorrectionImageFilter()
         corrector.SetMaximumNumberOfIterations([max_iters] * levels)
