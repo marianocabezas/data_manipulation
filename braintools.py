@@ -260,7 +260,6 @@ def tissue_pve(
         path=None,
         patient='',
         timepoint='',
-        patch_size=(3, 3, 3),
         th=0.75,
         max_iter=10,
         alpha=2.0,
@@ -279,7 +278,6 @@ def tissue_pve(
     :param path: Path where the output will be saved.
     :param patient: Name of the patient being processed.
     :param timepoint: Timepoint of the patient.
-    :param patch_size: Patch size used to compute neighbour probabilities.
     :param th: Threshold for the tissue segmentation step. This threshold is
      used for the trimmed likelihood estimator during the expectation
      maximisation approach. Unlike previous C++ versions of this method, this
@@ -415,7 +413,8 @@ def tissue_pve(
         # each class.
         if verbose > 1:
             print('- Membership priors (initial)')
-        mpr = np.sum(np.array(ppr[:pure_tissues]).reshape(len(ppr), -1), axis=1)
+        flat_pure_ppr = np.array(ppr[:pure_tissues]).reshape(pure_tissues, -1)
+        mpr = np.sum(flat_pure_ppr, axis=1)
         mpr = mpr / np.sum(mpr)
         np.concatenate(mpr, np.zeros(len(ppr) - pure_tissues))
 
@@ -566,7 +565,8 @@ def tissue_pve(
                 print('-- (posterior probability ranges = %s)' % ppr_s)
 
             # We prepare the data for the next iteration
-            mpr = np.sum(np.array(ppr[:pure_tissues]).reshape(len(ppr), -1), axis=1)
+            flat_pure_ppr = np.array(ppr[:pure_tissues]).reshape(pure_tissues, -1)
+            mpr = np.sum(flat_pure_ppr, axis=1)
             mpr = mpr / np.sum(mpr)
             np.concatenate(mpr, np.zeros(len(ppr) - pure_tissues))
 
