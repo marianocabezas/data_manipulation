@@ -51,7 +51,7 @@ def atlas_registration(
         print(
             '- Affine registration - %s (%s)' % (timepoint, patient)
         )
-    affine = sitk.itkaffine(reference, atlas)
+    affine = sitk.itkaffine(reference, atlas, sampling=0.75, steps=100)
     sitk.itkresample(
         reference, atlas, affine,
         path=path, name='atlas_affine'
@@ -90,7 +90,7 @@ def atlas_registration(
     )
     sitk.itkdemons(
         reference, atlas_matched, mask, path=path, name='atlas',
-        steps=200, sigma=2
+        steps=200, sigma=0.5
     )
 
     df = os.path.join(path, 'atlas_multidemons_deformation.nii.gz')
