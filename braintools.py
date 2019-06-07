@@ -18,6 +18,11 @@ def atlas_registration(
         patient='',
         timepoint='',
         patch_size=(3, 3, 3),
+        affine_sampling=0.75,
+        affine_steps=100,
+        affine_levels=3,
+        demons_steps=200,
+        demons_sigma=0.5,
         verbose=1,
 
 ):
@@ -32,6 +37,11 @@ def atlas_registration(
     :param patient: Name of the patient being processed.
     :param timepoint: Timepoint of the patient.
     :param patch_size: Patch size used for the similarity image.
+    :param affine_sampling: Sampling for affine registration.
+    :param affine_steps: Steps for the affine registration.
+    :param affine_levels: Levels of the Demons registration.
+    :param demons_steps: Steps for the Demons registration.
+    :param demons_sigma: Sigma for the Demons registration.
     :param verbose: Verbose levels for this tool. The minimum value must be 1.
      For this level of verbosity, only "required" messages involving each step
      and likelihood will be shown. For the next level, various debugging
@@ -51,7 +61,10 @@ def atlas_registration(
         print(
             '- Affine registration - %s (%s)' % (timepoint, patient)
         )
-    affine = sitk.itkaffine(reference, atlas, sampling=0.75, steps=100)
+    affine = sitk.itkaffine(
+        reference, atlas, sampling=affine_sampling,
+        steps=affine_steps, levels=affine_levels
+    )
     sitk.itkresample(
         reference, atlas, affine,
         path=path, name='atlas_affine'
@@ -90,7 +103,7 @@ def atlas_registration(
     )
     sitk.itkdemons(
         reference, atlas_matched, mask, path=path, name='atlas',
-        steps=200, sigma=0.5
+        steps=demons_steps, sigma=demons_sigma
     )
 
     df = os.path.join(path, 'atlas_multidemons_deformation.nii.gz')
