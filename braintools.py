@@ -420,6 +420,8 @@ def tissue_pve(
 
         # Initial values for loop
         sum_log_ant = -np.inf
+        best_log = sum_log_ant
+        best_ppr = map(np.copy, ppr)
 
         sum_ppr = np.sum(ppr, axis=0)
         sum_log = np.sum(map(
@@ -553,13 +555,18 @@ def tissue_pve(
             sum_log = np.sum(
                 map(lambda pr_i: np.sum(np.log(pr_i[pr_i > 0])), ppr)
             )
+
+            if sum_log > best_log:
+                best_log = sum_log
+                best_ppr = map(np.copy, ppr)
+
             if verbose > 1:
                 print('-- Log-likelihood = %.2e' % sum_log)
             elif verbose > 0:
                 print('log-likelihood = %.2e' % sum_log)
 
         # We save the probability maps
-        for i, pr in enumerate(ppr):
+        for i, pr in enumerate(best_ppr):
             prnii.get_data()[:] = pr
             prnii.to_filename(os.path.join(path, 'tissue_pr%d.nii.gz' % i))
 
