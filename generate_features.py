@@ -88,7 +88,10 @@ def main():
 
         patches = np.stack([np.array(data) for data in [flair, pd, t2, gado, t1] if data is not None], axis=1)
 
-        print 'Our final vector\'s size = (' + ','.join([str(num) for num in patches.shape]) + ')'
+        print(
+                'Our final vector\'s size = ('
+                + ','.join([str(num) for num in patches.shape]) + ')'
+        )
 
 
 def get_patches_from_name(filename, centers, patch_size):
@@ -109,12 +112,12 @@ def get_patches(image, centers, patch_size=(15, 15, 15), spacing=None):
     list_of_tuples = all(map(lambda center: isinstance(center, tuple), centers))
     sizes_match = all(map(lambda center: len(center) == len(patch_size), centers))
     if list_of_tuples and sizes_match:
-        patch_half = tuple(map(lambda idx: idx/2, patch_size))
-        padding = tuple(map(lambda (idx, size): (idx, size-idx), zip(patch_half, patch_size)))
+        patch_half = tuple(map(lambda idx: idx / 2, patch_size))
+        padding = tuple(map(lambda idx, size: (idx, size - idx), zip(patch_half, patch_size)))
         new_image = np.pad(image, padding, mode='constant', constant_values=0)
         slices = map(
             lambda center: map(
-                lambda (c_idx, p_idx, s_idx): slice(c_idx-p_idx, c_idx+(s_idx-p_idx)),
+                lambda c_idx, p_idx, s_idx: slice(c_idx - p_idx, c_idx + (s_idx - p_idx)),
                 zip(center, patch_half, patch_size)
             ),
             map(lambda center: map(add, center, patch_half), centers)
@@ -151,48 +154,48 @@ def get_patches2_5d(image, centers, patch_size=(15, 15)):
     list_of_tuples = all([isinstance(center, tuple) for center in centers])
     sizes_match = [len(center) >= len(patch_size) for center in centers]
     if list_of_tuples and sizes_match:
-        new_patch_size = tuple([max(patch_size)]*len(centers[0]))
-        patch_half = tuple([idx/2 for idx in new_patch_size])
+        new_patch_size = tuple([max(patch_size)] * len(centers[0]))
+        patch_half = tuple([idx / 2 for idx in new_patch_size])
         new_centers = [map(add, center, patch_half) for center in centers]
-        padding = tuple((idx, size-idx) for idx, size in zip(patch_half, new_patch_size))
+        padding = tuple((idx, size - idx) for idx, size in zip(patch_half, new_patch_size))
         new_image = np.pad(image, padding, mode='constant', constant_values=0)
         slices_x = [
             [
                 center[0],
-                slice(center[1] - patch_size[0]/2, center[1] + (patch_size[0] - patch_size[0]/2)),
-                slice(center[2] - patch_size[1]/2, center[2] + (patch_size[1] - patch_size[1]/2))
+                slice(center[1] - patch_size[0] / 2, center[1] + (patch_size[0] - patch_size[0] / 2)),
+                slice(center[2] - patch_size[1] / 2, center[2] + (patch_size[1] - patch_size[1] / 2))
             ]
             for center in new_centers
-            ]
+        ]
         slices_y = [
             [
-                slice(center[0] - patch_size[0]/2, center[0] + (patch_size[0] - patch_size[0]/2)),
+                slice(center[0] - patch_size[0] / 2, center[0] + (patch_size[0] - patch_size[0] / 2)),
                 center[1],
-                slice(center[2] - patch_size[1]/2, center[2] + (patch_size[1] - patch_size[1]/2))
+                slice(center[2] - patch_size[1] / 2, center[2] + (patch_size[1] - patch_size[1] / 2))
             ]
             for center in new_centers
-            ]
+        ]
         slices_z = [
             [
-                slice(center[0] - patch_size[0]/2, center[0] + (patch_size[0] - patch_size[0]/2)),
-                slice(center[1] - patch_size[1]/2, center[1] + (patch_size[1] - patch_size[1]/2)),
+                slice(center[0] - patch_size[0] / 2, center[0] + (patch_size[0] - patch_size[0] / 2)),
+                slice(center[1] - patch_size[1] / 2, center[1] + (patch_size[1] - patch_size[1] / 2)),
                 center[2]
             ]
             for center in new_centers
-            ]
+        ]
         patches_x = [new_image[idx] for idx in slices_x]
         patches_y = [new_image[idx] for idx in slices_y]
         patches_z = [new_image[idx] for idx in slices_z]
     return patches_x, patches_y, patches_z
 
-    
+
 def get_mask_voxels(mask):
     return map(tuple, np.stack(np.nonzero(mask), axis=1))
 
 
 def get_mask_centers(mask):
     labels, nlabels = label(mask)
-    all_labels = range(1, nlabels+1)
+    all_labels = range(1, nlabels + 1)
     centers = map(lambda center: tuple(map(int_round, center)), center_of_mass(mask, labels, all_labels))
     return centers
 
