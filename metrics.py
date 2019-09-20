@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+from functools import reduce
 from nibabel import load as load_nii
 import numpy as np
 from skimage.measure import label as bwlabeln
@@ -18,11 +19,16 @@ def regionprops(mask):
 
 def masks_by_size(mask, sizes):
     blobs, labels, areas = regionprops(mask)
-    labels_list = [[l for l, a in zip(labels, areas) if (a >= mins) & (a < maxs)]
-                   for mins, maxs in zip(sizes[:-1], sizes[1:])]
+    labels_list = [
+        [l for l, a in zip(labels, areas) if (a >= mins) & (a < maxs)]
+        for mins, maxs in zip(sizes[:-1], sizes[1:])
+    ]
     labels_list.append([l for l, a in zip(labels, areas) if a >= sizes[-1]])
-    submasks = [reduce(lambda x, y: np.logical_or(x, y), [np.equal(blobs, l) for l in nu_labels if nu_labels])
-                if nu_labels else np.zeros_like(mask) for nu_labels in labels_list]
+    submasks = [
+        reduce(
+            lambda x, y: np.logical_or(x, y),
+            [np.equal(blobs, l) for l in nu_labels if nu_labels]
+        ) if nu_labels else np.zeros_like(mask) for nu_labels in labels_list]
     return submasks
 
 
@@ -33,9 +39,15 @@ def analysis_by_sizes(target, estimated, sizes):
     fp_sub = masks_by_size(np.logical_and(np.logical_not(a), b), sizes)
     tpd_list = [true_positive_det(a_i, b) for a_i in a_sub]
     tps_list = [true_positive_seg(a_i, b) for a_i in a_sub]
-    fpd_list = [len(filter(bool, np.unique(bwlabeln(fp_i)))) for fp_i in fp_sub]
+    fpd_list = [
+        len(list(filter(bool, np.unique(bwlabeln(fp_i)))))
+        for fp_i in fp_sub
+    ]
     fps_list = [np.count_nonzero(fp_i) for fp_i in fp_sub]
-    gtd_list = [len(filter(bool, np.unique(bwlabeln(a_i)))) for a_i in a_sub]
+    gtd_list = [
+        len(list(filter(bool, np.unique(bwlabeln(a_i)))))
+        for a_i in a_sub
+    ]
     gts_list = [np.count_nonzero(a_i) for a_i in a_sub]
     tpf_list = [100.0 * tp_i/gt_i if gt_i > 0 else np.nan
                 for tp_i, gt_i in zip(tpd_list, gtd_list)]
@@ -75,7 +87,18 @@ def true_positive_seg(target, estimated):
 def true_positive_det(target, estimated):
     a = bwlabeln(as_logical(target))
     b = as_logical(estimated)
-    return np.min([np.sum([np.logical_and(b, a == (i+1)).any() for i in range(np.max(a))]), np.max(bwlabeln(b))])
+    tp_det = np.min(
+        [
+            np.sum(
+                [
+                    np.logical_and(b, a == (i+1)).any()
+                    for i in range(np.max(a))
+                ]
+            ),
+            np.max(bwlabeln(b))
+         ]
+    )
+    return tp_det
 
 
 def false_positive_det(target, estimated):

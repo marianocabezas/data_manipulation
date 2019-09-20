@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 import os
 from time import strftime
 from nibabel import load as load_nii
@@ -156,7 +156,7 @@ def get_patches2_5d(image, centers, patch_size=(15, 15)):
     if list_of_tuples and sizes_match:
         new_patch_size = tuple([max(patch_size)] * len(centers[0]))
         patch_half = tuple([idx / 2 for idx in new_patch_size])
-        new_centers = [map(add, center, patch_half) for center in centers]
+        new_centers = [list(map(add, center, patch_half)) for center in centers]
         padding = tuple((idx, size - idx) for idx, size in zip(patch_half, new_patch_size))
         new_image = np.pad(image, padding, mode='constant', constant_values=0)
         slices_x = [

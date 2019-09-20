@@ -1,4 +1,3 @@
-from __future__ import print_function
 import time
 import os
 import re
@@ -43,14 +42,13 @@ def slicing(center_list, size):
     :return:
     """
     half_size = tuple(map(lambda ps: ps/2, size))
-    ranges = map(
-        lambda center: map(
-            lambda (c_idx, p_idx, s_idx): range(
+    ranges = [
+        [
+            range(
                 np.max([c_idx - p_idx, 0]), c_idx + (s_idx - p_idx)
-            ),
-            zip(center, half_size, size)),
-        center_list
-    )
+            ) for c_idx, p_idx, s_idx in zip(center, half_size, size)
+        ] for center in center_list
+    ]
     slices = np.concatenate(
         map(
             lambda x: np.stack(list(product(*x)), axis=1),
@@ -68,10 +66,10 @@ def find_file(name, dirname):
     :param dirname:
     :return:
     """
-    result = filter(
+    result = list(filter(
         lambda x: not os.path.isdir(x) and re.search(name, x),
         os.listdir(dirname)
-    )
+    ))
 
     return os.path.join(dirname, result[0]) if result else None
 
@@ -90,3 +88,24 @@ def print_message(message):
         (c['c'], time.strftime("%H:%M:%S", time.localtime()), c['nc'], message)
     )
     print(dashes)
+
+
+def time_to_string(time_val):
+    """
+
+    :param time_val: Time value in seconds (using functions from the time
+     package)
+    :return: String with a human format for time
+    """
+
+    if time_val < 60:
+        time_s = '%ds' % time_val
+    elif time_val < 3600:
+        time_s = '%dm %ds' % (time_val // 60, time_val % 60)
+    else:
+        time_s = '%dh %dm %ds' % (
+            time_val // 3600,
+            (time_val % 3600) // 60,
+            time_val % 60
+        )
+    return time_s

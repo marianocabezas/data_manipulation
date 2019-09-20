@@ -49,11 +49,11 @@ def itkresample(
     }
 
     # Init
-    if isinstance(fixed, basestring):
+    if isinstance(fixed, str):
         fixed = sitk.ReadImage(fixed)
     elif isinstance(fixed, np.ndarray):
         fixed = sitk.GetImageFromArray(fixed)
-    if isinstance(moving, basestring):
+    if isinstance(moving, str):
         moving = sitk.ReadImage(moving)
     elif isinstance(moving, np.ndarray):
         moving = sitk.GetImageFromArray(moving)
@@ -64,7 +64,7 @@ def itkresample(
         print('\t  Image: ' + os.path.join(path, name + '.nii.gz'))
 
     if path is None or name is None or find_file(name + '.nii.gz', path) is None:
-        interp_alg = interpolation if not isinstance(interpolation, basestring)\
+        interp_alg = interpolation if not isinstance(interpolation, str)\
             else interpolation_dict[interpolation]
 
         resampled = sitk.Resample(moving, fixed, transform, interp_alg, default_value)
@@ -100,7 +100,7 @@ def itkwarp(
     :return:
     """
 
-    if isinstance(field, basestring):
+    if isinstance(field, str):
         field = sitk.ReadImage(field)
 
     df_transform = sitk.DisplacementFieldTransform(field)
@@ -135,7 +135,7 @@ def itkn4(
     """
 
     # Init
-    if isinstance(image, basestring):
+    if isinstance(image, str):
         image = sitk.ReadImage(image)
     elif isinstance(image, np.ndarray):
         image = sitk.GetImageFromArray(image)
@@ -144,7 +144,7 @@ def itkn4(
         print('\t  Image: ' + os.path.join(path, name + '_corrected.nii.gz'))
     if path is None or name is None or find_file(name + '_corrected.nii.gz', path) is None:
         if mask is not None:
-            if isinstance(mask, basestring):
+            if isinstance(mask, str):
                 mask = sitk.ReadImage(mask)
             elif isinstance(mask, np.ndarray):
                 mask = sitk.GetImageFromArray(mask)
@@ -183,11 +183,11 @@ def itkhist_match(
     """
 
     # Init
-    if isinstance(fixed, basestring):
+    if isinstance(fixed, str):
         fixed = sitk.ReadImage(fixed)
     elif isinstance(fixed, np.ndarray):
         fixed = sitk.GetImageFromArray(fixed)
-    if isinstance(moving, basestring):
+    if isinstance(moving, str):
         moving = sitk.ReadImage(moving)
     elif isinstance(moving, np.ndarray):
         moving = sitk.GetImageFromArray(moving)
@@ -217,7 +217,7 @@ def itksmoothing(image, path=None, name=None, sigma=0.5, sufix='_smoothed_subtra
     """
 
     # Init
-    if isinstance(image, basestring):
+    if isinstance(image, str):
         image = sitk.ReadImage(image)
     elif isinstance(image, np.ndarray):
         image = sitk.GetImageFromArray(image)
@@ -269,11 +269,11 @@ def itkrigid(
     :return:
     """
     # Init
-    if isinstance(fixed, basestring):
+    if isinstance(fixed, str):
         fixed = sitk.ReadImage(fixed)
     elif isinstance(fixed, np.ndarray):
         fixed = sitk.GetImageFromArray(fixed)
-    if isinstance(moving, basestring):
+    if isinstance(moving, str):
         moving = sitk.ReadImage(moving)
     elif isinstance(moving, np.ndarray):
         moving = sitk.GetImageFromArray(moving)
@@ -374,11 +374,11 @@ def itkaffine(
     """
 
     # Init
-    if isinstance(fixed, basestring):
+    if isinstance(fixed, str):
         fixed = sitk.ReadImage(fixed)
     elif isinstance(fixed, np.ndarray):
         fixed = sitk.GetImageFromArray(fixed)
-    if isinstance(moving, basestring):
+    if isinstance(moving, str):
         moving = sitk.ReadImage(moving)
     elif isinstance(moving, np.ndarray):
         moving = sitk.GetImageFromArray(moving)
@@ -457,11 +457,11 @@ def itksubtraction(fixed, moving, path=None, name=None, verbose=1):
     """
 
     # Init
-    if isinstance(fixed, basestring):
+    if isinstance(fixed, str):
         fixed = sitk.ReadImage(fixed)
     elif isinstance(fixed, np.ndarray):
         fixed = sitk.GetImageFromArray(fixed)
-    if isinstance(moving, basestring):
+    if isinstance(moving, str):
         moving = sitk.ReadImage(moving)
     elif isinstance(moving, np.ndarray):
         moving = sitk.GetImageFromArray(moving)
@@ -507,16 +507,16 @@ def itkdemons(
     :return:
     """
     # Init
-    if isinstance(fixed, basestring):
+    if isinstance(fixed, str):
         fixed = sitk.ReadImage(fixed)
     elif isinstance(fixed, np.ndarray):
         fixed = sitk.GetImageFromArray(fixed)
-    if isinstance(moving, basestring):
+    if isinstance(moving, str):
         moving = sitk.ReadImage(moving)
     elif isinstance(moving, np.ndarray):
         moving = sitk.GetImageFromArray(moving)
     if mask is not None:
-        if isinstance(mask, basestring):
+        if isinstance(mask, str):
             mask = sitk.ReadImage(mask)
         elif isinstance(mask, np.ndarray):
             mask = sitk.GetImageFromArray(mask)

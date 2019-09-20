@@ -1,5 +1,5 @@
-from __future__ import print_function
 from operator import add
+from functools import partial
 import os
 import sys
 from nibabel import load as load_nii
@@ -74,13 +74,12 @@ def atlas_registration(
             reference, structures, affine, interpolation='nn',
             path=path, name='structures_affine'
         )
-    map(
-        lambda (pr_i, i): sitk.itkresample(
+    [
+        sitk.itkresample(
             reference, pr_i, affine,
             path=path, name='atlas_affine_pr%d' % i
-        ),
-        zip(atlases_pr, range(len(atlases_pr)))
-    )
+        ) for pr_i, i in zip(atlases_pr, range(len(atlases_pr)))
+    ]
 
     # Histogram matching
     atlas_affine = os.path.join(path, 'atlas_affine.nii.gz')
@@ -112,18 +111,17 @@ def atlas_registration(
             reference, os.path.join(path, 'structures_affine.nii.gz'),
             df, interpolation='nn', path=path, name='atlas_ventricles'
         )
-    map(
-        lambda (i, pr_i): sitk.itkwarp(
+    [
+        sitk.itkwarp(
             reference, pr_i, df,
             path=path, name='atlas_pr%d' % i
-        ),
-        enumerate(
+        ) for i, pr_i in enumerate(
             map(
                 lambda i: os.path.join(path, 'atlas_affine_pr%d.nii.gz' % i),
                 range(len(atlases_pr))
             )
         )
-    )
+    ]
     sitk.itkwarp(
         reference, atlas_matched, df,
         path=path, name='atlas_demons'
@@ -150,10 +148,9 @@ def atlas_registration(
 
         # Then we compute the centers (slices) for the mask voxels
         mask_im = load_nii(mask).get_data()
-        centers = map(
-            lambda idx: tuple(idx),
-            np.stack(np.nonzero(mask_im), axis=1)
-        )
+        centers = [
+            tuple(idx) for idx in np.stack(np.nonzero(mask_im), axis=1)
+        ]
         [x, y, z] = np.stack(centers, axis=1)
         new_centers = map(
             lambda center: map(add, center, patch_half),
@@ -187,8 +184,8 @@ def atlas_registration(
 
         if verbose > 1:
             print(
-                '- Similarity range = [%f, %f]' % (
-                    similarity.min(), similarity.max()
+                '- Similarity range = [{:f}, {:f}]'.format(
+                    similarity.min(initial=None), similarity.max(initial=None)
                 )
             )
 
@@ -324,10 +321,9 @@ def tissue_pve(
         mixed_classes = range(len(atlas_names))
 
     prnii = load_nii(atlas_names[0])
-    atlases_pr = map(
-        lambda name: load_nii(name).get_data().astype(np.float32),
-        atlas_names
-    )
+    atlases_pr = [
+        load_nii(name).get_data().astype(np.float32) for name in atlas_names
+    ]
     images = np.stack(
         map(
             lambda name: load_nii(name).get_data().astype(np.float32),
@@ -354,10 +350,9 @@ def tissue_pve(
         # Now we'll create the partial volume atlases. That means that we need
         # to merge the atlases of both classes, and renormalize everything.
         # Remember: The sum of all atlases for a given voxel should be 1.
-        atlases = atlases_pr + map(
-            lambda (i0, i1): (atlases_pr[i0] + atlases_pr[i1]) / 2.0,
-            pv_classes
-        )
+        atlases = atlases_pr + [
+            (atlases_pr[i0] + atlases_pr[i1]) / 2.0 for i0, i1 in pv_classes
+        ]
         if verbose > 1:
             iapr_s = ' '.join(
                 map(
@@ -372,7 +367,7 @@ def tissue_pve(
         if verbose > 1:
             print(
                 '-- atlas sum ranges = [%.5f, %.5f]' % (
-                    atlases_sum.min(), atlases_sum.max()
+                    atlases_sum.min(initial=None), atlases_sum.max(initial=None)
                 )
             )
         nonzero_sum = np.nonzero(atlases_sum)
@@ -464,10 +459,11 @@ def tissue_pve(
                 mixed_classes
             )
 
-            pure_unique_params = map(
-                lambda pr_i: expectation(images, pr_i, adaptive_th, verbose),
-                pure_pr
-            )
+            pure_unique_params = [
+                expectation(
+                    images, pr_i, adaptive_th, verbose
+                ) for pr_i in pure_pr
+            ]
 
             pure_params = [None] * pure_tissues
             for k, classes in enumerate(mixed_classes):
@@ -477,15 +473,14 @@ def tissue_pve(
                 else:
                     pure_params[classes] = pure_unique_params[k]
 
-            pv_params = map(
-                lambda (i0, i1): tuple(
-                    map(
-                        lambda (p0, p1): (p0 + p1) / 2,
+            pv_params = [
+                tuple(
+                    [
+                        (p0 + p1) / 2 for p0, p1 in
                         zip(pure_params[i0], pure_params[i1])
-                    )
-                ),
-                pv_classes
-            )
+                    ]
+                ) for i0, i1 in pv_classes
+            ]
             params = pure_params + pv_params
 
             # <Maximisation step>
@@ -501,23 +496,15 @@ def tissue_pve(
             elif verbose > 0:
                 print('<maximisation>', end=' ')
                 sys.stdout.flush()
-            cpr = map(
-                lambda (mu_i, sigma_i): maximisation(
-                    images,
-                    mask,
-                    mu_i,
-                    sigma_i,
-                    verbose
-                ),
-                params
-            )
+            partial_max = partial(maximisation, data=images, roi=mask, verbose=verbose)
+            cpr = [
+                partial_max(mu_i, sigma_i) for mu_i, sigma_i in params
+            ]
             # Priors: Atlas weighted by similarity + Neighbourhood weighted by
             # inverse similarity
             # Posterior probability = cpr * priors
-            ppr = map(
-                lambda (cpr_i, prior_i): mask * cpr_i * prior_i,
-                zip(cpr, apr)
-            )
+            ppr = [mask * cpr_i * prior_i for cpr_i, prior_i in zip(cpr, apr)]
+
             # Posterior are normalised with the sum of the probabilities for
             # each class
             sum_ppr = np.sum(ppr, axis=0)
@@ -530,21 +517,24 @@ def tissue_pve(
             if verbose > 1:
                 apr_s = ' '.join(
                     map(
-                        lambda pr_i: '[%.5f, %.5f]' % (pr_i.min(), pr_i.max()),
+                        lambda pr_i: '[{:.5f}, {:.5f}]'.format(pr_i.min(), pr_i.max()),
                         apr
                     )
                 )
-                print('--  (apr ranges = %s)' % apr_s)
+                print('--  (apr ranges = {:})'.format(apr_s))
                 cpr_s = ' '.join(
-                    map(
-                        lambda pr_i: '[%.2e, %.2e]' % (pr_i.min(), pr_i.max()),
-                        cpr
-                    )
+                    [
+                        '[{:.2e}, {:.2e}]'.format(
+                            pr_i.min(), pr_i.max()
+                        ) for pr_i in cpr
+                    ]
                 )
-                print('--  (conditional probability ranges = %s)' % cpr_s)
+                print(
+                    '--  (conditional probability ranges = {:})'.format(cpr_s)
+                )
                 ppr_s = ' '.join(
                     map(
-                        lambda pr_i: '[%f, %f]' % (pr_i.min(), pr_i.max()),
+                        lambda pr_i: '[{:f}, {:f}]'.format(pr_i.min(), pr_i.max()),
                         ppr
                     )
                 )
