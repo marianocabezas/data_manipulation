@@ -165,3 +165,62 @@ class SpatialTransformer(nn.Module):
             interp_vol = torch.reshape(interp_vol_flat, final_shape)
 
         return interp_vol
+
+
+class SmoothingLayer(nn.Module):
+    """
+    N-D Smoothing layer pytorch
+
+    The layer defines a trainable Gaussian smoothing kernel. While
+    convolutional layers might learn such a kernel, the idea is to impose
+    smoothing to the activations of the previous layer. The only parameter
+    is the sigma value for the Gaussian kernel of a fixed size.
+    """
+    def __init__(
+            self,
+            length=5,
+            init_sigma=0.5,
+            trainable=False
+    ):
+        super(SmoothingLayer, self).__init__()
+        if trainable:
+            self.sigma = nn.Parameter(
+                torch.tensor(
+                    init_sigma,
+                    dtype=torch.float,
+                    requires_grad=True
+                )
+            )
+        else:
+            self.sigma = torch.tensor(
+                    init_sigma,
+                    dtype=torch.float
+                )
+        self.length = length
+
+    def forward(self, x):
+        dims = len(x.shape) - 2
+        assert dims <= 3, 'Too many dimensions for convolution'
+
+        kernel_shape = (self.length,) * dims
+        lims = map(lambda s: (s - 1.) / 2, kernel_shape)
+        grid = map(
+            lambda g: torch.tensor(g, dtype=torch.float, device=x.device),
+            np.ogrid[tuple(map(lambda l: slice(-l, l + 1), lims))]
+        )
+        sigma_square = self.sigma * self.sigma
+        k = torch.exp(
+            -sum(map(lambda g: g*g, grid)) / (2. * sigma_square.to(x.device))
+        )
+        sumk = torch.sum(k)
+        if sumk.tolist() > 0:
+            k = k / sumk
+
+        kernel = torch.reshape(k, (1,) * 2 + kernel_shape).to(x.device)
+        final_kernel = kernel.repeat((x.shape[1],) * 2 + (1,) * dims)
+        conv_f = [F.conv1d, F.conv2d, F.conv3d]
+        padding = self.length / 2
+
+        smoothed_x = conv_f[dims - 1](x, final_kernel, padding=padding)
+
+        return smoothed_x
