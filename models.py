@@ -290,7 +290,6 @@ class Autoencoder(nn.Module):
         ])
 
     def forward(self, input_s):
-        # input_s = torch.cat([source, target], dim=1)
         down_inputs = []
         for c in self.down:
             c.to(self.device)
