@@ -1,5 +1,4 @@
 import time
-import sys
 from copy import deepcopy
 import torch
 from torch import nn
@@ -28,11 +27,11 @@ class BaseModel(nn.Module):
         self.acc = None
         super().__init__()
 
-    def forward(self, *input):
+    def forward(self, inputs):
         return None
 
     def mini_batch_loop(
-            self, training, train=True, refine=False
+            self, training, train=True
     ):
         losses = list()
         mid_losses = list()

@@ -66,12 +66,11 @@ def get_slices_bb(masks, patch_size, overlap, filtered=False, min_size=0):
             ) for min_bb_i, max_bb_i in zip(min_bb, max_bb)
         ]
 
-        patch_slices = map(
-            lambda dim_range: centers_to_slice(
+        patch_slices = [
+            centers_to_slice(
                 itertools.product(*dim_range), patch_half
-            ),
-            dim_ranges
-        )
+            ) for dim_range in dim_ranges
+        ]
 
         if filtered:
             patch_slices = [

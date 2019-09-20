@@ -1,5 +1,4 @@
-from __future__ import print_function
-import SimpleITK as sitk
+import SimpleITK as SItk
 import os
 import numpy as np
 from utils import find_file
@@ -26,7 +25,7 @@ def itkresample(
         path=None,
         name=None,
         default_value=0.0,
-        interpolation=sitk.sitkBSpline,
+        interpolation=SItk.sitkBSpline,
         verbose=0
 ):
     """
@@ -43,22 +42,22 @@ def itkresample(
     """
 
     interpolation_dict = {
-        'linear': sitk.sitkLinear,
-        'bspline': sitk.sitkBSpline,
-        'nn': sitk.sitkNearestNeighbor,
+        'linear': SItk.sitkLinear,
+        'bspline': SItk.sitkBSpline,
+        'nn': SItk.sitkNearestNeighbor,
     }
 
     # Init
     if isinstance(fixed, str):
-        fixed = sitk.ReadImage(fixed)
+        fixed = SItk.ReadImage(fixed)
     elif isinstance(fixed, np.ndarray):
-        fixed = sitk.GetImageFromArray(fixed)
+        fixed = SItk.GetImageFromArray(fixed)
     if isinstance(moving, str):
-        moving = sitk.ReadImage(moving)
+        moving = SItk.ReadImage(moving)
     elif isinstance(moving, np.ndarray):
-        moving = sitk.GetImageFromArray(moving)
+        moving = SItk.GetImageFromArray(moving)
     if transform is None:
-        transform = sitk.Transform(fixed.GetDimension(), sitk.sitkIdentity)
+        transform = SItk.Transform(fixed.GetDimension(), SItk.sitkIdentity)
 
     if verbose > 1:
         print('\t  Image: ' + os.path.join(path, name + '.nii.gz'))
@@ -67,14 +66,14 @@ def itkresample(
         interp_alg = interpolation if not isinstance(interpolation, str)\
             else interpolation_dict[interpolation]
 
-        resampled = sitk.Resample(moving, fixed, transform, interp_alg, default_value)
+        resampled = SItk.Resample(moving, fixed, transform, interp_alg, default_value)
 
         if path is not None and name is not None:
-            sitk.WriteImage(resampled, os.path.join(path, name + '.nii.gz'))
+            SItk.WriteImage(resampled, os.path.join(path, name + '.nii.gz'))
     else:
-        resampled = sitk.ReadImage(os.path.join(path, name + '.nii.gz'))
+        resampled = SItk.ReadImage(os.path.join(path, name + '.nii.gz'))
 
-    return sitk.GetArrayFromImage(resampled)
+    return SItk.GetArrayFromImage(resampled)
 
 
 def itkwarp(
@@ -84,7 +83,7 @@ def itkwarp(
         path=None,
         name=None,
         default_value=0.0,
-        interpolation=sitk.sitkBSpline,
+        interpolation=SItk.sitkBSpline,
         verbose=0,
 ):
     """
@@ -101,9 +100,9 @@ def itkwarp(
     """
 
     if isinstance(field, str):
-        field = sitk.ReadImage(field)
+        field = SItk.ReadImage(field)
 
-    df_transform = sitk.DisplacementFieldTransform(field)
+    df_transform = SItk.DisplacementFieldTransform(field)
 
     return itkresample(
         fixed, moving, df_transform,
@@ -118,7 +117,7 @@ def itkn4(
         mask=None,
         max_iters=400,
         levels=1,
-        cast=sitk.sitkFloat32,
+        cast=SItk.sitkFloat32,
         verbose=1
 ):
     """
@@ -136,27 +135,27 @@ def itkn4(
 
     # Init
     if isinstance(image, str):
-        image = sitk.ReadImage(image)
+        image = SItk.ReadImage(image)
     elif isinstance(image, np.ndarray):
-        image = sitk.GetImageFromArray(image)
+        image = SItk.GetImageFromArray(image)
 
     if verbose > 1:
         print('\t  Image: ' + os.path.join(path, name + '_corrected.nii.gz'))
     if path is None or name is None or find_file(name + '_corrected.nii.gz', path) is None:
         if mask is not None:
             if isinstance(mask, str):
-                mask = sitk.ReadImage(mask)
+                mask = SItk.ReadImage(mask)
             elif isinstance(mask, np.ndarray):
-                mask = sitk.GetImageFromArray(mask)
+                mask = SItk.GetImageFromArray(mask)
         else:
-            mask = sitk.OtsuThreshold(image, 0, 1, 200)
-        image = sitk.Cast(image, cast)
-        corrector = sitk.N4BiasFieldCorrectionImageFilter()
+            mask = SItk.OtsuThreshold(image, 0, 1, 200)
+        image = SItk.Cast(image, cast)
+        corrector = SItk.N4BiasFieldCorrectionImageFilter()
         corrector.SetMaximumNumberOfIterations([max_iters] * levels)
         output = corrector.Execute(image, mask)
         if name is not None and path is not None:
-            sitk.WriteImage(output, os.path.join(path, name + '_corrected.nii.gz'))
-        return sitk.GetArrayFromImage(output)
+            SItk.WriteImage(output, os.path.join(path, name + '_corrected.nii.gz'))
+        return SItk.GetArrayFromImage(output)
 
 
 def itkhist_match(
@@ -184,24 +183,24 @@ def itkhist_match(
 
     # Init
     if isinstance(fixed, str):
-        fixed = sitk.ReadImage(fixed)
+        fixed = SItk.ReadImage(fixed)
     elif isinstance(fixed, np.ndarray):
-        fixed = sitk.GetImageFromArray(fixed)
+        fixed = SItk.GetImageFromArray(fixed)
     if isinstance(moving, str):
-        moving = sitk.ReadImage(moving)
+        moving = SItk.ReadImage(moving)
     elif isinstance(moving, np.ndarray):
-        moving = sitk.GetImageFromArray(moving)
+        moving = SItk.GetImageFromArray(moving)
 
     if verbose > 1:
         print('\t  Image: ' + os.path.join(path, name + '_corrected_matched.nii.gz'))
     if path is None or name is None or find_file(name + '_corrected_matched.nii.gz', path) is None:
-        matched = sitk.HistogramMatching(
-            sitk.Cast(moving, fixed.GetPixelID()), fixed,
+        matched = SItk.HistogramMatching(
+            SItk.Cast(moving, fixed.GetPixelID()), fixed,
             histogram_levels, match_points, mean_on
         )
         if name is not None and path is not None:
-            sitk.WriteImage(matched, os.path.join(path, name + '_corrected_matched.nii.gz'))
-        return sitk.GetArrayFromImage(matched)
+            SItk.WriteImage(matched, os.path.join(path, name + '_corrected_matched.nii.gz'))
+        return SItk.GetArrayFromImage(matched)
 
 
 def itksmoothing(image, path=None, name=None, sigma=0.5, sufix='_smoothed_subtraction.nii.gz', verbose=1):
@@ -218,22 +217,22 @@ def itksmoothing(image, path=None, name=None, sigma=0.5, sufix='_smoothed_subtra
 
     # Init
     if isinstance(image, str):
-        image = sitk.ReadImage(image)
+        image = SItk.ReadImage(image)
     elif isinstance(image, np.ndarray):
-        image = sitk.GetImageFromArray(image)
+        image = SItk.GetImageFromArray(image)
 
     # Gaussian smoothing
-    gauss_filter = sitk.DiscreteGaussianImageFilter()
+    gauss_filter = SItk.DiscreteGaussianImageFilter()
     gauss_filter.SetVariance(sigma * sigma)
 
     if verbose > 1:
         print('\t  Image: ' + os.path.join(path, name + sufix))
     if path is None or name is None or find_file(name + sufix, path) is None:
         smoothed = gauss_filter.Execute(image)
-        sitk.WriteImage(smoothed, os.path.join(path, name + sufix))
+        SItk.WriteImage(smoothed, os.path.join(path, name + sufix))
     else:
-        smoothed = sitk.ReadImage(os.path.join(path, name + sufix))
-    return sitk.GetArrayFromImage(smoothed)
+        smoothed = SItk.ReadImage(os.path.join(path, name + sufix))
+    return SItk.GetArrayFromImage(smoothed)
 
 
 def itkrigid(
@@ -248,7 +247,7 @@ def itkrigid(
         min_step=0.0001,
         max_step=0.2,
         relaxation_factor=0.5,
-        cast= sitk.sitkFloat32,
+        cast=SItk.sitkFloat32,
         verbose=1
 ):
     """
@@ -270,32 +269,32 @@ def itkrigid(
     """
     # Init
     if isinstance(fixed, str):
-        fixed = sitk.ReadImage(fixed)
+        fixed = SItk.ReadImage(fixed)
     elif isinstance(fixed, np.ndarray):
-        fixed = sitk.GetImageFromArray(fixed)
+        fixed = SItk.GetImageFromArray(fixed)
     if isinstance(moving, str):
-        moving = sitk.ReadImage(moving)
+        moving = SItk.ReadImage(moving)
     elif isinstance(moving, np.ndarray):
-        moving = sitk.GetImageFromArray(moving)
-    fixed_float32 = sitk.Cast(fixed, cast)
-    moving_float32 = sitk.Cast(moving, cast)
+        moving = SItk.GetImageFromArray(moving)
+    fixed_float32 = SItk.Cast(fixed, cast)
+    moving_float32 = SItk.Cast(moving, cast)
 
     ''' Transformations '''
-    initial_tf = sitk.CenteredTransformInitializer(
+    initial_tf = SItk.CenteredTransformInitializer(
         fixed_float32,
         moving_float32,
-        sitk.VersorRigid3DTransform(),
-        sitk.CenteredTransformInitializerFilter.MOMENTS
+        SItk.VersorRigid3DTransform(),
+        SItk.CenteredTransformInitializerFilter.MOMENTS
     )
 
     ''' Registration parameters '''
-    registration = sitk.ImageRegistrationMethod()
+    registration = SItk.ImageRegistrationMethod()
 
     # Similarity metric settings.
     registration.SetMetricAsMattesMutualInformation(numberOfHistogramBins=number_bins)
     registration.SetMetricSamplingStrategy(registration.RANDOM)
     registration.SetMetricSamplingPercentage(sampling)
-    registration.SetInterpolator(sitk.sitkLinear)
+    registration.SetInterpolator(SItk.sitkLinear)
 
     # Optimizer settings.
     registration.SetOptimizerAsRegularStepGradientDescent(
@@ -318,7 +317,7 @@ def itkrigid(
     if verbose > 0:
         print('\tRigid initial registration')
         registration.AddCommand(
-            sitk.sitkMultiResolutionIterationEvent,
+            SItk.sitkMultiResolutionIterationEvent,
             lambda: print('\t > %s (%s) level %d' % (
                 registration.GetName(),
                 name,
@@ -327,7 +326,7 @@ def itkrigid(
         )
     if verbose > 1:
         registration.AddCommand(
-            sitk.sitkIterationEvent,
+            SItk.sitkIterationEvent,
             lambda: print_current(registration, initial_tf)
         )
 
@@ -351,7 +350,7 @@ def itkaffine(
         min_step=0.0001,
         max_step=0.2,
         relaxation_factor=0.5,
-        cast=sitk.sitkFloat32,
+        cast=SItk.sitkFloat32,
         verbose=1
 ):
     """
@@ -375,28 +374,28 @@ def itkaffine(
 
     # Init
     if isinstance(fixed, str):
-        fixed = sitk.ReadImage(fixed)
+        fixed = SItk.ReadImage(fixed)
     elif isinstance(fixed, np.ndarray):
-        fixed = sitk.GetImageFromArray(fixed)
+        fixed = SItk.GetImageFromArray(fixed)
     if isinstance(moving, str):
-        moving = sitk.ReadImage(moving)
+        moving = SItk.ReadImage(moving)
     elif isinstance(moving, np.ndarray):
-        moving = sitk.GetImageFromArray(moving)
+        moving = SItk.GetImageFromArray(moving)
     if initial_tf is None:
         initial_tf = itkrigid(fixed, moving, name, verbose=verbose)
 
-    fixed_float32 = sitk.Cast(fixed, cast)
-    moving_float32 = sitk.Cast(moving, cast)
-    optimized_tf = sitk.AffineTransform(3)
+    fixed_float32 = SItk.Cast(fixed, cast)
+    moving_float32 = SItk.Cast(moving, cast)
+    optimized_tf = SItk.AffineTransform(3)
 
     ''' Registration parameters '''
-    registration = sitk.ImageRegistrationMethod()
+    registration = SItk.ImageRegistrationMethod()
 
     # Similarity metric settings.
     registration.SetMetricAsMattesMutualInformation(numberOfHistogramBins=number_bins)
     registration.SetMetricSamplingStrategy(registration.RANDOM)
     registration.SetMetricSamplingPercentage(sampling)
-    registration.SetInterpolator(sitk.sitkLinear)
+    registration.SetInterpolator(SItk.sitkLinear)
 
     # Optimizer settings.
     registration.SetOptimizerAsRegularStepGradientDescent(
@@ -421,7 +420,7 @@ def itkaffine(
     if verbose > 0:
         print('\tAffine registration')
         registration.AddCommand(
-            sitk.sitkMultiResolutionIterationEvent,
+            SItk.sitkMultiResolutionIterationEvent,
             lambda: print('\t > %s (%s) level %d' % (
                 registration.GetName(),
                 name,
@@ -430,7 +429,7 @@ def itkaffine(
         )
     if verbose > 1:
         registration.AddCommand(
-            sitk.sitkIterationEvent,
+            SItk.sitkIterationEvent,
             lambda: print_current(registration, optimized_tf)
         )
 
@@ -439,7 +438,7 @@ def itkaffine(
 
     registration.Execute(fixed_float32, moving_float32)
 
-    final_tf = sitk.Transform(optimized_tf)
+    final_tf = SItk.Transform(optimized_tf)
     final_tf.AddTransform(initial_tf)
 
     return final_tf
@@ -458,28 +457,28 @@ def itksubtraction(fixed, moving, path=None, name=None, verbose=1):
 
     # Init
     if isinstance(fixed, str):
-        fixed = sitk.ReadImage(fixed)
+        fixed = SItk.ReadImage(fixed)
     elif isinstance(fixed, np.ndarray):
-        fixed = sitk.GetImageFromArray(fixed)
+        fixed = SItk.GetImageFromArray(fixed)
     if isinstance(moving, str):
-        moving = sitk.ReadImage(moving)
+        moving = SItk.ReadImage(moving)
     elif isinstance(moving, np.ndarray):
-        moving = sitk.GetImageFromArray(moving)
+        moving = SItk.GetImageFromArray(moving)
 
     if verbose > 1:
         print('\t  Image: ' + os.path.join(path, name + '_subtraction.nii.gz'))
 
     if path is None or name is None or find_file(name + '_subtraction.nii.gz', path) is None:
-        sub = sitk.Subtract(
-            sitk.Cast(fixed, sitk.sitkFloat32),
-            sitk.Cast(moving, sitk.sitkFloat32)
+        sub = SItk.Subtract(
+            SItk.Cast(fixed, SItk.sitkFloat32),
+            SItk.Cast(moving, SItk.sitkFloat32)
         )
         if path is not None and name is not None:
-            sitk.WriteImage(sub, os.path.join(path, name + '_subtraction.nii.gz'))
+            SItk.WriteImage(sub, os.path.join(path, name + '_subtraction.nii.gz'))
     else:
-        sub = sitk.ReadImage(os.path.join(path, name + '_subtraction.nii.gz'))
+        sub = SItk.ReadImage(os.path.join(path, name + '_subtraction.nii.gz'))
 
-    return sitk.GetArrayFromImage(sub)
+    return SItk.GetArrayFromImage(sub)
 
 
 def itkdemons(
@@ -490,7 +489,7 @@ def itkdemons(
         name=None,
         steps=50,
         sigma=1.0,
-        cast=sitk.sitkFloat32,
+        cast=SItk.sitkFloat32,
         verbose=1
 ):
     """
@@ -508,23 +507,23 @@ def itkdemons(
     """
     # Init
     if isinstance(fixed, str):
-        fixed = sitk.ReadImage(fixed)
+        fixed = SItk.ReadImage(fixed)
     elif isinstance(fixed, np.ndarray):
-        fixed = sitk.GetImageFromArray(fixed)
+        fixed = SItk.GetImageFromArray(fixed)
     if isinstance(moving, str):
-        moving = sitk.ReadImage(moving)
+        moving = SItk.ReadImage(moving)
     elif isinstance(moving, np.ndarray):
-        moving = sitk.GetImageFromArray(moving)
+        moving = SItk.GetImageFromArray(moving)
     if mask is not None:
         if isinstance(mask, str):
-            mask = sitk.ReadImage(mask)
+            mask = SItk.ReadImage(mask)
         elif isinstance(mask, np.ndarray):
-            mask = sitk.GetImageFromArray(mask)
-        fixed = sitk.Mask(fixed, mask)
-        moving = sitk.Mask(moving, mask)
+            mask = SItk.GetImageFromArray(mask)
+        fixed = SItk.Mask(fixed, mask)
+        moving = SItk.Mask(moving, mask)
 
-    fixed_float32 = sitk.Cast(fixed, cast)
-    moving_float32 = sitk.Cast(moving, cast)
+    fixed_float32 = SItk.Cast(fixed, cast)
+    moving_float32 = SItk.Cast(moving, cast)
 
     if name is not None:
         deformation_name = name + '_multidemons_deformation.nii.gz'
@@ -535,13 +534,13 @@ def itkdemons(
         print('\t  Deformation: ' + os.path.join(path, deformation_name))
 
     if path is None or name is None or find_file(deformation_name, path) is None:
-        demons = sitk.DemonsRegistrationFilter()
+        demons = SItk.DemonsRegistrationFilter()
         demons.SetNumberOfIterations(steps)
         demons.SetStandardDeviations(sigma)
 
         if verbose > 1:
             demons.AddCommand(
-                sitk.sitkIterationEvent,
+                SItk.sitkIterationEvent,
                 lambda: print('\t  Demons %d: %f' % (
                     demons.GetElapsedIterations(), demons.GetMetric()
                 ))
@@ -549,8 +548,8 @@ def itkdemons(
 
         deformation_field = demons.Execute(fixed_float32, moving_float32)
         if name is not None and path is not None:
-            sitk.WriteImage(deformation_field, os.path.join(path, deformation_name))
+            SItk.WriteImage(deformation_field, os.path.join(path, deformation_name))
     else:
-        deformation_field = sitk.ReadImage(os.path.join(path, deformation_name))
+        deformation_field = SItk.ReadImage(os.path.join(path, deformation_name))
 
-    return sitk.GetArrayFromImage(deformation_field)
+    return SItk.GetArrayFromImage(deformation_field)
