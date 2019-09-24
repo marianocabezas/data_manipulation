@@ -53,7 +53,7 @@ class BaseModel(nn.Module):
 
             # Training losses
             if self.training:
-                batch_loss = torch.sum(
+                batch_loss = sum(
                     [
                         l_f['weight'] * l_f['f'](pred_labels, y)
                         for l_f in self.train_functions
