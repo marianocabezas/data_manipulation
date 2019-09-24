@@ -89,16 +89,18 @@ class SpatialTransformer(nn.Module):
         # interpolate
         interp_vol = None
         if self.interp_method == 'linear':
-            loc0 = map(torch.floor, loc)
-
             # clip values
             loc0lst = [
-                torch.clamp(l, 0, m) for l, m in zip(loc0, max_loc)
+                torch.clamp(l, 0, m) for l, m in zip(
+                    map(torch.floor, loc), max_loc
+                )
             ]
 
             # get other end of point cube
             loc1 = [
-                torch.clamp(l + 1, 0, m) for l, m in zip(loc0, max_loc)
+                torch.clamp(l + 1, 0, m) for l, m in zip(
+                    map(torch.floor, loc), max_loc
+                )
             ]
             locs = [
                 [f.type(torch.long) for f in loc0lst],
