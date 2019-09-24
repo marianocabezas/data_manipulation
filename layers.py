@@ -62,7 +62,7 @@ class SpatialTransformer(nn.Module):
         final_shape = vol.shape[:2] + df_shape
         weights_shape = (vol.shape[0], 1) + df_shape
         nb_dims = len(df_shape)
-        max_loc = map(lambda s: s - 1, vol.shape[2:])
+        max_loc = [s - 1 for s in vol.shape[2:]]
 
         # location should be mesh and delta
         if n_inputs > 2:
