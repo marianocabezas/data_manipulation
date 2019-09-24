@@ -346,7 +346,7 @@ class LongitudinalCroppingDataset(Dataset):
 class LongitudinalImageDataset(Dataset):
     def __init__(
             self,
-            source, target, lesions
+            source, target, lesions, masks
     ):
         # Init
         # Image and mask should be numpy arrays
@@ -361,6 +361,17 @@ class LongitudinalImageDataset(Dataset):
         self.source = source
         self.target = target
         self.lesions = lesions
+        self.masks = masks
+
+        indices = [np.where(mask > 0) for mask in self.masks]
+        self.bb = [
+            [
+                slice(min_i, max_i)
+                for min_i, max_i in zip(
+                    np.min(idx, axis=-1), np.max(idx, axis=-1)
+                )
+            ] for idx in indices
+        ]
 
     def __getitem__(self, index):
         # We select the case.
