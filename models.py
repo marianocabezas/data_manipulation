@@ -218,7 +218,7 @@ class BaseModel(nn.Module):
     def print_progress(self, batch_i, n_batches, b_loss, mean_loss, train=True):
         init_c = '\033[0m' if train else '\033[38;5;238m'
         whites = ' '.join([''] * 12)
-        percent = 20 * (batch_i + 1) / n_batches
+        percent = 20 * (batch_i + 1) // n_batches
         progress_s = ''.join(['-'] * percent)
         remainder_s = ''.join([' '] * (20 - percent))
         loss_name = 'train_loss' if train else 'val_loss'
