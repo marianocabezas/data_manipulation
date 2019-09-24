@@ -297,12 +297,12 @@ class LongitudinalCroppingDataset(Dataset):
         if type(patch_size) is not tuple:
             patch_size = (patch_size,) * len(self.lesions[0].shape)
 
-        # self.patch_slices = get_slices_bb(
-        #     lesions, patch_size, patch_size[0] // 2, rois
-        # )
-        self.patch_slices = get_balanced_slices(
-            lesions, patch_size, rois=rois, neg_ratio=0
+        self.patch_slices = get_slices_bb(
+            lesions, patch_size, patch_size[0] // 2, rois
         )
+        # self.patch_slices = get_balanced_slices(
+        #     lesions, patch_size, rois=rois, neg_ratio=0
+        # )
 
         self.max_slice = np.cumsum(list(map(len, self.patch_slices)))
 
