@@ -115,10 +115,10 @@ class BaseModel(nn.Module):
         best_loss_tr = np.inf
         best_loss_val = np.inf
         l_names = ['train', ' val '] + [
-            '{:^8s}'.format(l_f['name']) for l_f in self.val_functions
+            '{:^6s}'.format(l_f['name']) for l_f in self.val_functions
         ]
         acc_names = [
-            '{:^8s}'.format(a_f['name']) for a_f in self.acc_functions
+            '{:^6s}'.format(a_f['name']) for a_f in self.acc_functions
         ]
         best_losses = (len(l_names) - 2) * [np.inf]
         best_acc = len(acc_names) * [-np.inf]
@@ -148,7 +148,7 @@ class BaseModel(nn.Module):
             # Mid losses check
             losses_s = [
                 '\033[36m{:8.4f}\033[0m'.format(l) if pl > l
-                else '{:}'.format(l) for pl, l in zip(
+                else '{:8.4f}'.format(l) for pl, l in zip(
                     best_losses, mid_losses
                 )
             ]
@@ -160,7 +160,7 @@ class BaseModel(nn.Module):
             # Acc check
             acc_s = [
                 '\033[36m{:8.4f}\033[0m'.format(a) if pa < a
-                else '{:}'.format(a) for pa, a  in zip(
+                else '{:8.4f}'.format(a) for pa, a in zip(
                     best_acc, acc
                 )
             ]
