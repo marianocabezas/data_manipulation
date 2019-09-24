@@ -144,7 +144,7 @@ class SpatialTransformer(nn.Module):
                 wt = torch.reshape(wt, weights_shape)
                 return wt * vol_val
 
-            values = map(get_point_value, cube_pts)
+            values = tuple(map(get_point_value, cube_pts))
             interp_vol = torch.sum(torch.stack(values, dim=0), dim=0)
 
         elif self.interp_method == 'nearest':
