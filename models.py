@@ -9,6 +9,8 @@ from utils import time_to_string
 
 class BaseModel(nn.Module):
     def __init__(self):
+        super().__init__()
+        # Init values
         self.optimizer_alg = None
         self.epoch = 0
         self.t_train = 0
@@ -25,7 +27,6 @@ class BaseModel(nn.Module):
         ]
         self.acc_functions = {}
         self.acc = None
-        super().__init__()
 
     def forward(self, inputs):
         return None

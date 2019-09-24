@@ -33,7 +33,7 @@ class SpatialTransformer(nn.Module):
             :param df_shape: Shape of the deformation field.
             :param interp_method: 'linear' or 'nearest'.
         """
-        super(SpatialTransformer, self).__init__()
+        super().__init__()
         self.interp_method = interp_method
         self.device = device
         self.linear_norm = linear_norm
@@ -182,7 +182,7 @@ class SmoothingLayer(nn.Module):
             init_sigma=0.5,
             trainable=False
     ):
-        super(SmoothingLayer, self).__init__()
+        super().__init__()
         if trainable:
             self.sigma = nn.Parameter(
                 torch.tensor(
