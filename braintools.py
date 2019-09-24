@@ -4,7 +4,7 @@ import os
 import sys
 from nibabel import load as load_nii
 import numpy as np
-from utils import print_message, find_file, slicing
+from .utils import print_message, find_file, slicing
 import sitk
 
 

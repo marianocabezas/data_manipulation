@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from torch.utils.data.dataset import Dataset
 from torch.utils.data.sampler import Sampler
-from generate_features import get_mask_voxels
+from .generate_features import get_mask_voxels
 
 
 ''' Utility function for datasets '''
