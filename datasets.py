@@ -33,7 +33,7 @@ def filter_size(slices, mask, min_size):
 
 
 def get_mesh(shape):
-    linvec = tuple(map(lambda s: np.linspace(0, s - 1, s), shape))
+    linvec = tuple(np.linspace(0, s - 1, s) for s in shape)
     mesh = np.stack(np.meshgrid(*linvec, indexing='ij')).astype(np.float32)
     return mesh
 
