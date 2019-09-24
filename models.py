@@ -43,7 +43,10 @@ class BaseModel(nn.Module):
                 self.optimizer_alg.zero_grad()
 
             torch.cuda.synchronize()
-            pred_labels = self(x.to(self.device))
+            x_cuda = [
+                x_i.to(self.device) for x_i in x
+            ] if isinstance(x, list) else x.to(self.device)
+            pred_labels = self(x_cuda)
 
             # Training losses
             if self.training:
