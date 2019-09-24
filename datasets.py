@@ -365,19 +365,20 @@ class LongitudinalImageDataset(Dataset):
 
         indices = [np.where(mask > 0) for mask in self.masks]
         self.bb = [
-            [
+            tuple(
                 slice(min_i, max_i)
                 for min_i, max_i in zip(
                     np.min(idx, axis=-1), np.max(idx, axis=-1)
                 )
-            ] for idx in indices
+            ) for idx in indices
         ]
 
     def __getitem__(self, index):
         # We select the case.
-        source = self.source[index]
-        target = self.target[index]
-        lesion = self.lesions[index]
+        bb = self.bb[index]
+        source = self.source[index][(slice(None),) + bb]
+        target = self.target[index][(slice(None),) + bb]
+        lesion = self.lesions[index][bb]
 
         inputs_p = (
             source,
