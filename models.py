@@ -36,6 +36,7 @@ class BaseModel(nn.Module):
     ):
         losses = list()
         mid_losses = list()
+        accs = list()
         n_batches = len(data)
         for batch_i, (x, y) in enumerate(data):
             # We train the model and check the loss
@@ -70,6 +71,11 @@ class BaseModel(nn.Module):
                 ]
                 batch_loss = sum(batch_losses)
                 mid_losses.append([l.tolist() for l in batch_losses])
+                batch_accs = [
+                    l_f['weight'] * l_f['f'](pred_labels, y)
+                    for l_f in self.acc_functions
+                ]
+                accs.append([a.tolist() for a in batch_accs])
 
             torch.cuda.synchronize()
             torch.cuda.empty_cache()
@@ -85,10 +91,13 @@ class BaseModel(nn.Module):
                 batch_i, n_batches, loss_value, np.mean(losses), train
             )
 
+        mean_loss = np.mean(losses)
         if train:
-            return np.mean(losses)
+            return mean_loss
         else:
-            return np.mean(losses), np.mean(list(zip(*mid_losses)), axis=1)
+            mean_losses = np.mean(list(zip(*mid_losses)), axis=1)
+            mean_accs = np.mean(list(zip(*accs)), axis=1)
+            return mean_loss, mean_losses, mean_accs
 
     def fit(
             self,
