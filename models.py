@@ -44,6 +44,7 @@ class BaseModel(nn.Module):
 
             torch.cuda.synchronize()
             if isinstance(x, list):
+
                 x_cuda = [
                     x_i.to(self.device) for x_i in x
                 ]
@@ -53,12 +54,11 @@ class BaseModel(nn.Module):
 
             # Training losses
             if self.training:
-                batch_loss = sum(
-                    [
-                        l_f['weight'] * l_f['f'](pred_labels, y)
-                        for l_f in self.train_functions
-                    ]
-                )
+                batch_losses = [
+                    l_f['weight'] * l_f['f'](pred_labels, y)
+                    for l_f in self.train_functions
+                ]
+                batch_loss = sum(batch_losses)
                 batch_loss.backward()
                 self.optimizer_alg.step()
 
@@ -68,7 +68,7 @@ class BaseModel(nn.Module):
                     l_f['weight'] * l_f['f'](pred_labels, y)
                     for l_f in self.val_functions
                 ]
-                batch_loss = torch.sum(batch_losses)
+                batch_loss = sum(batch_losses)
                 mid_losses.append([l.tolist() for l in batch_losses])
 
             torch.cuda.synchronize()
