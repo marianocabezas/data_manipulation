@@ -88,7 +88,7 @@ class BaseModel(nn.Module):
         if train:
             return np.mean(losses)
         else:
-            return np.mean(losses), np.mean(zip(*mid_losses), axis=1)
+            return np.mean(losses), np.mean(list(zip(*mid_losses)), axis=1)
 
     def fit(
             self,
