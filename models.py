@@ -32,12 +32,12 @@ class BaseModel(nn.Module):
         return None
 
     def mini_batch_loop(
-            self, training, train=True
+            self, data, train=True
     ):
         losses = list()
         mid_losses = list()
-        n_batches = len(training)
-        for batch_i, (x, y) in enumerate(training):
+        n_batches = len(data)
+        for batch_i, (x, y) in enumerate(data):
             # We train the model and check the loss
             if self.training:
                 self.optimizer_alg.zero_grad()
@@ -55,10 +55,9 @@ class BaseModel(nn.Module):
                 )
                 batch_loss.backward()
                 self.optimizer_alg.step()
+
+            # Validation losses
             else:
-                # roi_value = torch.mean(batch_loss_r).tolist()
-                # tumor_value = torch.mean(batch_loss_t).tolist()
-                # loss_value = roi_value + tumor_value
                 batch_losses = [
                     l_f['weight'] * l_f['f'](pred_labels, y)
                     for l_f in self.val_functions
@@ -72,7 +71,8 @@ class BaseModel(nn.Module):
             loss_value = batch_loss.tolist()
             losses.append(loss_value)
 
-            # Curriculum dropout
+            # Curriculum dropout / Adaptive dropout
+            # Here we could modify dropout to be updated for each batch.
             # (1 - rho) * exp(- gamma * t) + rho, gamma > 0
 
             self.print_progress(
@@ -203,7 +203,7 @@ class BaseModel(nn.Module):
         t_end_s = time_to_string(t_end)
         if verbose:
             print(
-                    'Training finished in %d epochs ({:}) '
+                    'Training finished in {:} epochs ({:}) '
                     'with minimum loss = {:f} (epoch {:d})'.format(
                         self.epoch + 1, t_end_s, best_loss_val, best_e
                     )
