@@ -16,6 +16,7 @@ class BaseModel(nn.Module):
         self.t_train = 0
         self.t_val = 0
         self.dropout = 0
+        self.final_dropout = 0
         self.ann_rate = 0
         self.best_state = None
         self.best_opt = None
