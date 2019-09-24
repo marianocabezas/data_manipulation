@@ -99,7 +99,7 @@ class BaseModel(nn.Module):
         best_loss_tr = np.inf
         best_loss_val = np.inf
         l_names = ['train', ' val '] + [
-            '{:^8s}'.format(l_f['name']) for l_f in self.val_functions[1:]
+            '{:^8s}'.format(l_f['name']) for l_f in self.val_functions
         ]
         acc_names = [
             '{:^8s}'.format(a_f['name']) for a_f in self.acc_functions
