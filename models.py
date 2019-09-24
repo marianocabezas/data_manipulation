@@ -235,6 +235,12 @@ class BaseModel(nn.Module):
         print('\033[K', end='', flush=True)
         print(batch_s, end='\r', flush=True)
 
+    def save_model(self, net_name):
+        torch.save(self.state_dict(), net_name)
+
+    def load_model(self, net_name):
+        self.load_state_dict(torch.load(net_name))
+
 
 class Autoencoder(nn.Module):
     def __init__(
