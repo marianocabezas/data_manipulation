@@ -99,7 +99,6 @@ class BaseModel(nn.Module):
             verbose=True
     ):
         # Init
-        self.train()
         best_e = 0
         no_improv_e = 0
         best_loss_tr = np.inf
@@ -119,6 +118,7 @@ class BaseModel(nn.Module):
         for self.epoch in range(epochs):
             # Main epoch loop
             self.t_train = time.time()
+            self.train()
             loss_tr = self.mini_batch_loop(train_loader)
             improvement_tr = loss_tr < best_loss_tr
             if improvement_tr:
@@ -129,6 +129,7 @@ class BaseModel(nn.Module):
 
             with torch.no_grad():
                 self.t_val = time.time()
+                self.eval()
                 loss_val, mid_losses, acc = self.mini_batch_loop(
                     val_loader, False
                 )
