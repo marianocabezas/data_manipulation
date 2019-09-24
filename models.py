@@ -46,10 +46,7 @@ class BaseModel(nn.Module):
 
             torch.cuda.synchronize()
             if isinstance(x, list):
-
-                x_cuda = [
-                    x_i.to(self.device) for x_i in x
-                ]
+                x_cuda = tuple(x_i.to(self.device) for x_i in x)
                 pred_labels = self(*x_cuda)
             else:
                 pred_labels = self(x.to(self.device))
