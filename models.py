@@ -28,7 +28,7 @@ class BaseModel(nn.Module):
         self.acc_functions = {}
         self.acc = None
 
-    def forward(self, inputs):
+    def forward(self, *inputs):
         return None
 
     def mini_batch_loop(
