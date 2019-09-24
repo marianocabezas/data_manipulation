@@ -96,7 +96,8 @@ class BaseModel(nn.Module):
             return mean_loss
         else:
             mean_losses = np.mean(list(zip(*mid_losses)), axis=1)
-            mean_accs = np.mean(list(zip(*accs)), axis=1)
+            np_accs = np.array(list(zip(*accs)))
+            mean_accs = np.mean(np.accs, axis=1) if np_accs.size() > 0 else []
             return mean_loss, mean_losses, mean_accs
 
     def fit(
