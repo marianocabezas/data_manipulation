@@ -338,10 +338,10 @@ class LongitudinalCroppingDataset(Dataset):
                 target,
             )
 
-            targets_p = (
-                np.expand_dims(case_lesion[case_tuple], 0),
-                target
-            )
+        targets_p = (
+            np.expand_dims(case_lesion[case_tuple], 0),
+            target
+        )
 
         return inputs_p, targets_p
 
