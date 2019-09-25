@@ -64,10 +64,13 @@ class BaseModel(nn.Module):
             # Validation losses
             else:
                 batch_losses = [
-                    l_f['weight'] * l_f['f'](pred_labels, y)
+                    l_f['f'](pred_labels, y)
                     for l_f in self.val_functions
                 ]
-                batch_loss = sum(batch_losses)
+                batch_loss = sum([
+                    l_f['weight'] * l
+                    for l_f, l in zip(self.val_functions, batch_losses)
+                ])
                 mid_losses.append([l.tolist() for l in batch_losses])
                 batch_accs = [
                     l_f['weight'] * l_f['f'](pred_labels, y)
