@@ -186,10 +186,7 @@ class BaseModel(nn.Module):
             t_s = time_to_string(t_out)
 
             drop_s = '{:5.3f}'.format(self.dropout)
-            if self.final_dropout <= self.dropout:
-                self.dropout = max(
-                    self.final_dropout, self.dropout - self.ann_rate
-                )
+            self.dropout_update()
 
             if verbose:
                 print('\033[K', end='')
@@ -222,6 +219,12 @@ class BaseModel(nn.Module):
                     'with minimum loss = {:f} (epoch {:d})'.format(
                         self.epoch + 1, t_end_s, best_loss_val, best_e
                     )
+            )
+
+    def dropout_update(self):
+        if self.final_dropout <= self.dropout:
+            self.dropout = max(
+                self.final_dropout, self.dropout - self.ann_rate
             )
 
     def print_progress(self, batch_i, n_batches, b_loss, mean_loss, train=True):
