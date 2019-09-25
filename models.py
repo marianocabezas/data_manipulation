@@ -197,7 +197,7 @@ class BaseModel(nn.Module):
                         ['-' * 6] * (len(l_names[2:]) + len(acc_names)) +
                         ['-' * 3]
                     )
-                    l_hdr = '  |  '.join(l_names + acc_names + ['p_drp'])
+                    l_hdr = '  |  '.join(l_names + acc_names + ['drp'])
                     print('{:}Epoch num |  {:}  |'.format(whites, l_hdr))
                     print('{:}----------|--{:}--|'.format(whites, l_bars))
                 final_s = whites + ' | '.join(

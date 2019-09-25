@@ -276,7 +276,7 @@ class GenericSegmentationCroppingDataset(Dataset):
 class LongitudinalCroppingDataset(Dataset):
     def __init__(
             self,
-            source, target, lesions, rois=None, patch_size=32
+            source, target, lesions, rois=None, patch_size=32, df=True
     ):
         # Init
         # Image and mask should be numpy arrays
@@ -291,18 +291,19 @@ class LongitudinalCroppingDataset(Dataset):
         self.source = source
         self.target = target
         self.lesions = lesions
+        self.df = df
         data_shape = self.lesions[0].shape
         self.mesh = get_mesh(data_shape)
 
         if type(patch_size) is not tuple:
             patch_size = (patch_size,) * len(self.lesions[0].shape)
 
-        # self.patch_slices = get_slices_bb(
-        #     lesions, patch_size, patch_size[0] // 2, rois
-        # )
-        self.patch_slices = get_balanced_slices(
-            lesions, patch_size, rois=rois, neg_ratio=0
+        self.patch_slices = get_slices_bb(
+            lesions, patch_size, patch_size[0] // 2, rois
         )
+        # self.patch_slices = get_balanced_slices(
+        #     lesions, patch_size, rois=rois, neg_ratio=0
+        # )
 
         self.max_slice = np.cumsum(list(map(len, self.patch_slices)))
 
@@ -324,18 +325,23 @@ class LongitudinalCroppingDataset(Dataset):
         mesh = self.mesh[none_slice + case_tuple]
         source = case_source[none_slice + case_tuple]
         target = case_target[none_slice + case_tuple]
+        if self.df:
+            inputs_p = (
+                source,
+                target,
+                mesh,
+                case_source
+            )
+        else:
+            inputs_p = (
+                source,
+                target,
+            )
 
-        inputs_p = (
-            source,
-            target,
-            mesh,
-            case_source
-        )
-
-        targets_p = (
-            np.expand_dims(case_lesion[case_tuple], 0),
-            target
-        )
+            targets_p = (
+                np.expand_dims(case_lesion[case_tuple], 0),
+                target
+            )
 
         return inputs_p, targets_p
 
