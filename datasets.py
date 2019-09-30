@@ -43,7 +43,7 @@ def get_mesh(shape):
 
 def get_slices_bb(masks, patch_size, overlap, filtered=False, min_size=0):
     patch_half = [p_length // 2 for p_length in patch_size]
-    steps = [max(p_length - overlap, 1) for p_length in patch_size]
+    steps = [max(p_length - o, 1) for p_length, o in zip(patch_size, overlap)]
 
     if type(masks) is list:
         min_bb = [np.min(np.where(mask > 0), axis=-1) for mask in masks]
