@@ -299,7 +299,8 @@ class LongitudinalCroppingDataset(Dataset):
             patch_size = (patch_size,) * len(self.lesions[0].shape)
 
         self.patch_slices = get_slices_bb(
-            lesions, patch_size, 0, rois, min_size=3
+            lesions, patch_size, tuple(3 * p // 4 for p in patch_size), rois,
+            min_size=3
         )
         # self.patch_slices = get_balanced_slices(
         #     lesions, patch_size, rois=rois, neg_ratio=0
