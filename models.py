@@ -331,7 +331,7 @@ class Autoencoder(nn.Module):
                 input_s = F.max_pool3d(input_s, 2)
 
         self.u.to(self.device)
-        input_s = self.u(input_s)
+        input_s = F.dropout3d(self.u(input_s), self.dropout, self.training)
 
         for d, i in zip(self.up, down_inputs[::-1]):
             d.to(self.device)
