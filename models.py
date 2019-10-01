@@ -347,6 +347,10 @@ class Autoencoder(nn.Module):
                     self.training
                 )
             else:
-                input_s = d(torch.cat((input_s, i), dim=1))
+                input_s = F.dropout3d(
+                    d(torch.cat((input_s, i), dim=1)),
+                    self.dropout,
+                    self.training
+                )
 
         return input_s
