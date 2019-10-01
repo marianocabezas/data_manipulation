@@ -282,7 +282,6 @@ class Autoencoder(nn.Module):
         # Down path of the unet
         self.down = nn.ModuleList([
             nn.Sequential(
-                nn.InstanceNorm3d(f_in),
                 nn.Conv3d(
                     f_in, f_out, 3,
                     padding=1,
@@ -294,7 +293,6 @@ class Autoencoder(nn.Module):
         ])
 
         self.u = nn.Sequential(
-            nn.InstanceNorm3d(conv_filters[-2]),
             nn.Conv3d(
                 conv_filters[-2], conv_filters[-1], 3,
                 padding=1
@@ -308,7 +306,6 @@ class Autoencoder(nn.Module):
         deconv_in = map(sum, zip(down_out, up_out))
         self.up = nn.ModuleList([
             nn.Sequential(
-                nn.InstanceNorm3d(f_in),
                 nn.ConvTranspose3d(
                     f_in, f_out, 3,
                     padding=1
