@@ -41,18 +41,22 @@ def get_mesh(shape):
 ''' Utility function for patch creation '''
 
 
-def get_slices_bb(masks, patch_size, overlap, filtered=False, min_size=0):
+def get_slices_bb(
+        masks, patch_size, overlap, rois=None, filtered=False, min_size=0
+):
+    if rois is None:
+        rois = masks
     patch_half = [p_length // 2 for p_length in patch_size]
     steps = [max(p_length - o, 1) for p_length, o in zip(patch_size, overlap)]
 
     if type(masks) is list:
-        min_bb = [np.min(np.where(mask > 0), axis=-1) for mask in masks]
+        min_bb = [np.min(np.where(mask > 0), axis=-1) for mask in rois]
         min_bb = [
             [
                 min_i + p_len for min_i, p_len in zip(min_bb_i, patch_half)
             ] for min_bb_i in min_bb
         ]
-        max_bb = [np.max(np.where(mask > 0), axis=-1) for mask in masks]
+        max_bb = [np.max(np.where(mask > 0), axis=-1) for mask in rois]
         max_bb = [
             [
                 max_i - p_len for max_i, p_len in zip(max_bb_i, patch_half)
@@ -81,9 +85,9 @@ def get_slices_bb(masks, patch_size, overlap, filtered=False, min_size=0):
 
     else:
         # Create bounding box and define
-        min_bb = np.min(np.where(masks > 0), axis=-1)
+        min_bb = np.min(np.where(rois > 0), axis=-1)
         min_bb = [min_i + p_len for min_i, p_len in zip(min_bb, patch_half)]
-        max_bb = np.max(np.where(masks > 0), axis=-1)
+        max_bb = np.max(np.where(rois > 0), axis=-1)
         max_bb = [max_i - p_len for max_i, p_len in zip(max_bb, patch_half)]
 
         dim_range = map(lambda t: np.arange(*t), zip(min_bb, max_bb, steps))
@@ -298,13 +302,13 @@ class LongitudinalCroppingDataset(Dataset):
         if type(patch_size) is not tuple:
             patch_size = (patch_size,) * len(self.lesions[0].shape)
 
-        # self.patch_slices = get_slices_bb(
-        #     lesions, patch_size, tuple(3 * p // 4 for p in patch_size), rois,
-        #     min_size=3
-        # )
-        self.patch_slices = get_balanced_slices(
-            lesions, patch_size, rois=rois, neg_ratio=0
+        self.patch_slices = get_slices_bb(
+            lesions, patch_size, tuple(p // 2 for p in patch_size), rois,
+            min_size=3
         )
+        # self.patch_slices = get_balanced_slices(
+        #     lesions, patch_size, rois=rois, neg_ratio=0
+        # )
 
         self.max_slice = np.cumsum(list(map(len, self.patch_slices)))
 
