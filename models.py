@@ -287,7 +287,7 @@ class Autoencoder(nn.Module):
                     padding=1,
                 ),
                 nn.ReLU(),
-                nn.InstanceNorm3d(f_out),
+                # nn.InstanceNorm3d(f_out),
             ) for f_in, f_out in zip(
                 [n_inputs] + conv_filters[:-2], conv_filters[:-1]
             )
@@ -299,7 +299,7 @@ class Autoencoder(nn.Module):
                 padding=1
             ),
             nn.ReLU(),
-            nn.InstanceNorm3d(conv_filters[-1]),
+            # nn.InstanceNorm3d(conv_filters[-1]),
         )
 
         # Up path of the unet
@@ -313,7 +313,7 @@ class Autoencoder(nn.Module):
                     padding=1
                 ),
                 nn.ReLU(),
-                nn.InstanceNorm3d(f_out),
+                # nn.InstanceNorm3d(f_out),
             ) for f_in, f_out in zip(
                 deconv_in, down_out
             )
