@@ -293,7 +293,97 @@ class BaseModel(nn.Module):
         self.load_state_dict(torch.load(net_name))
 
 
-class Autoencoder(nn.Module):
+class Autoencoder(BaseModel):
+    def __init__(
+            self,
+            conv_filters,
+            device=torch.device(
+                "cuda:0" if torch.cuda.is_available() else "cpu"
+            ),
+            n_inputs=1,
+            pooling=False,
+            dropout=0,
+    ):
+        super().__init__()
+        # Init
+        self.pooling = pooling
+        self.device = device
+        self.dropout = dropout
+        # Down path of the unet
+        self.down = nn.ModuleList([
+            nn.Sequential(
+                nn.Conv3d(
+                    f_in, f_out, 3,
+                    padding=1,
+                ),
+                nn.ReLU(),
+            ) for f_in, f_out in zip(
+                [n_inputs] + conv_filters[:-2], conv_filters[:-1]
+            )
+        ])
+
+        self.u = nn.Sequential(
+            nn.Conv3d(
+                conv_filters[-2], conv_filters[-1], 3,
+                padding=1
+            ),
+            nn.ReLU(),
+        )
+
+        # Up path of the unet
+        down_out = conv_filters[-2::-1]
+        up_out = conv_filters[:0:-1]
+        deconv_in = map(sum, zip(down_out, up_out))
+        self.up = nn.ModuleList([
+            nn.Sequential(
+                nn.ConvTranspose3d(
+                    f_in, f_out, 3,
+                    padding=1
+                ),
+                nn.ReLU(),
+            ) for f_in, f_out in zip(
+                deconv_in, down_out
+            )
+        ])
+
+    def forward(self, input_s):
+        down_inputs = []
+        for c in self.down:
+            c.to(self.device)
+            input_s = F.dropout3d(
+                c(input_s), self.dropout, self.training
+            )
+            down_inputs.append(input_s)
+            if self.pooling:
+                input_s = F.max_pool3d(input_s, 2)
+
+        self.u.to(self.device)
+        input_s = F.dropout3d(self.u(input_s), self.dropout, self.training)
+
+        for d, i in zip(self.up, down_inputs[::-1]):
+            d.to(self.device)
+            if self.pooling:
+                input_s = F.dropout3d(
+                    d(
+                        torch.cat(
+                            (F.interpolate(input_s, size=i.size()[2:]), i),
+                            dim=1
+                        )
+                    ),
+                    self.dropout,
+                    self.training
+                )
+            else:
+                input_s = F.dropout3d(
+                    d(torch.cat((input_s, i), dim=1)),
+                    self.dropout,
+                    self.training
+                )
+
+        return input_s
+
+
+class AutoencoderDouble(Autoencoder):
     def __init__(
             self,
             conv_filters,
@@ -364,38 +454,77 @@ class Autoencoder(nn.Module):
             )
         ])
 
-    def forward(self, input_s):
-        down_inputs = []
-        for c in self.down:
-            c.to(self.device)
-            input_s = F.dropout3d(
-                c(input_s), self.dropout, self.training
+
+class ResBlock(BaseModel):
+    def __init__(self, filters_in, filters_out, kernel=3):
+        super().__init__()
+        self.conv = nn.Conv3d(
+            filters_in, filters_out, kernel,
+            padding=kernel // 2
+        )
+        self.res = nn.Conv3d(
+            filters_in, filters_out, 1,
+        )
+
+    def forward(self, *inputs):
+        return self.conv(inputs) + self.res(inputs)
+
+
+class ResBlockTranspose(BaseModel):
+    def __init__(self, filters_in, filters_out, kernel=3):
+        super().__init__()
+        self.conv = nn.ConvTranspose3d(
+            filters_in, filters_out, kernel,
+            padding=kernel // 2
+        )
+        self.res = nn.ConvTranspose3d(
+            filters_in, filters_out, 1,
+        )
+
+    def forward(self, *inputs):
+        return self.conv(inputs) + self.res(inputs)
+
+
+class ResAutoencoder(Autoencoder):
+    def __init__(
+            self,
+            conv_filters,
+            device=torch.device(
+                "cuda:0" if torch.cuda.is_available() else "cpu"
+            ),
+            n_inputs=1,
+            pooling=False,
+            dropout=0,
+    ):
+        super().__init__()
+        # Init
+        self.pooling = pooling
+        self.device = device
+        self.dropout = dropout
+        # Down path of the unet
+        self.down = nn.ModuleList([
+            nn.Sequential(
+                ResBlock(f_in, f_out, 3),
+                nn.ReLU(),
+            ) for f_in, f_out in zip(
+                [n_inputs] + conv_filters[:-2], conv_filters[:-1]
             )
-            down_inputs.append(input_s)
-            if self.pooling:
-                input_s = F.max_pool3d(input_s, 2)
+        ])
 
-        self.u.to(self.device)
-        input_s = F.dropout3d(self.u(input_s), self.dropout, self.training)
+        self.u = nn.Sequential(
+            ResBlock(conv_filters[-2], conv_filters[-1], 3),
+            nn.ReLU(),
+        )
 
-        for d, i in zip(self.up, down_inputs[::-1]):
-            d.to(self.device)
-            if self.pooling:
-                input_s = F.dropout3d(
-                    d(
-                        torch.cat(
-                            (F.interpolate(input_s, size=i.size()[2:]), i),
-                            dim=1
-                        )
-                    ),
-                    self.dropout,
-                    self.training
-                )
-            else:
-                input_s = F.dropout3d(
-                    d(torch.cat((input_s, i), dim=1)),
-                    self.dropout,
-                    self.training
-                )
-
-        return input_s
+        # Up path of the unet
+        down_out = conv_filters[-2::-1]
+        up_out = conv_filters[:0:-1]
+        deconv_in = map(sum, zip(down_out, up_out))
+        self.up = nn.ModuleList([
+            nn.Sequential(
+                ResBlockTranspose(f_in, f_out, 3),
+                nn.ReLU(),
+            ) for f_in, f_out in zip(
+                deconv_in, down_out
+            )
+        ])
