@@ -112,19 +112,58 @@ class BaseModel(nn.Module):
         # Init
         best_e = 0
         no_improv_e = 0
-        best_loss_tr = np.inf
-        best_loss_val = np.inf
         l_names = ['train', ' val '] + [
             '{:^6s}'.format(l_f['name']) for l_f in self.val_functions
         ]
         acc_names = [
             '{:^6s}'.format(a_f['name']) for a_f in self.acc_functions
         ]
-        best_losses = (len(l_names) - 2) * [np.inf]
-        best_acc = len(acc_names) * [-np.inf]
         self.best_state = deepcopy(self.state_dict())
         self.best_opt = deepcopy(self.optimizer_alg.state_dict())
         t_start = time.time()
+
+        # Initial losses
+        with torch.no_grad():
+            self.t_val = time.time()
+            self.eval()
+            best_loss_tr, _, _ = self.mini_batch_loop(
+                train_loader, False
+            )
+            best_loss_val, best_losses, best_acc = self.mini_batch_loop(
+                val_loader, False
+            )
+            if verbose:
+                # Mid losses check
+                epoch_s = '\033[32mInit     \033[0m'
+                tr_loss_s = '\033[32m{:7.4f}\033[0m'.format(best_loss_tr)
+                loss_s = '\033[32m{:7.4f}\033[0m'.format(best_loss_val)
+                losses_s = [
+                    '\033[36m{:8.4f}\033[0m'.format(l) for l in best_losses
+                ]
+                # Acc check
+                acc_s = [
+                    '\033[36m{:8.4f}\033[0m'.format(a) for a in best_acc
+                ]
+                t_out = time.time() - self.t_val
+                t_s = time_to_string(t_out)
+
+                drop_s = '{:5.3f}'.format(self.dropout)
+
+                l_bars = '--|--'.join(
+                    ['-' * 5] * 2 +
+                    ['-' * 6] * (len(l_names[2:]) + len(acc_names)) +
+                    ['-' * 3]
+                )
+                l_hdr = '  |  '.join(l_names + acc_names + ['drp'])
+                print('\033[K', end='')
+                whites = ' '.join([''] * 12)
+                print('{:}Epoch num |  {:}  |'.format(whites, l_hdr))
+                print('{:}----------|--{:}--|'.format(whites, l_bars))
+                final_s = whites + ' | '.join(
+                    [epoch_s, tr_loss_s, loss_s] +
+                    losses_s + acc_s + [drop_s, t_s]
+                )
+                print(final_s)
 
         for self.epoch in range(epochs):
             # Main epoch loop
@@ -172,7 +211,7 @@ class BaseModel(nn.Module):
 
             # Patience check
             improvement_val = loss_val < best_loss_val
-            loss_s = '{:7.5f}'.format(loss_val)
+            loss_s = '{:7.4f}'.format(loss_val)
             if improvement_val:
                 best_loss_val = loss_val
                 epoch_s = '\033[32mEpoch {:03d}\033[0m'.format(self.epoch)
@@ -194,15 +233,6 @@ class BaseModel(nn.Module):
             if verbose:
                 print('\033[K', end='')
                 whites = ' '.join([''] * 12)
-                if self.epoch == 0:
-                    l_bars = '--|--'.join(
-                        ['-' * 5] * 2 +
-                        ['-' * 6] * (len(l_names[2:]) + len(acc_names)) +
-                        ['-' * 3]
-                    )
-                    l_hdr = '  |  '.join(l_names + acc_names + ['drp'])
-                    print('{:}Epoch num |  {:}  |'.format(whites, l_hdr))
-                    print('{:}----------|--{:}--|'.format(whites, l_bars))
                 final_s = whites + ' | '.join(
                     [epoch_s, tr_loss_s, loss_s] +
                     losses_s + acc_s + [drop_s, t_s]
@@ -287,7 +317,12 @@ class Autoencoder(nn.Module):
                     padding=1,
                 ),
                 nn.ReLU(),
-                # nn.InstanceNorm3d(f_out),
+                nn.InstanceNorm3d(f_out),
+                nn.Conv3d(
+                    f_out, f_out, 3,
+                    padding=1,
+                ),
+                nn.ReLU(),
             ) for f_in, f_out in zip(
                 [n_inputs] + conv_filters[:-2], conv_filters[:-1]
             )
@@ -299,7 +334,12 @@ class Autoencoder(nn.Module):
                 padding=1
             ),
             nn.ReLU(),
-            # nn.InstanceNorm3d(conv_filters[-1]),
+            nn.InstanceNorm3d(conv_filters[-1]),
+            nn.Conv3d(
+                conv_filters[-1], conv_filters[-1], 3,
+                padding=1
+            ),
+            nn.ReLU(),
         )
 
         # Up path of the unet
@@ -313,7 +353,12 @@ class Autoencoder(nn.Module):
                     padding=1
                 ),
                 nn.ReLU(),
-                # nn.InstanceNorm3d(f_out),
+                nn.InstanceNorm3d(f_out),
+                nn.ConvTranspose3d(
+                    f_out, f_out, 3,
+                    padding=1
+                ),
+                nn.ReLU(),
             ) for f_in, f_out in zip(
                 deconv_in, down_out
             )
