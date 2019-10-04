@@ -394,7 +394,7 @@ class AutoencoderDouble(Autoencoder):
             pooling=False,
             dropout=0,
     ):
-        super().__init__()
+        super().__init__(conv_filters, device, n_inputs, pooling, dropout)
         # Init
         self.pooling = pooling
         self.device = device
@@ -496,7 +496,7 @@ class ResAutoencoder(Autoencoder):
             pooling=False,
             dropout=0,
     ):
-        super().__init__()
+        super().__init__(conv_filters, device, n_inputs, pooling, dropout)
         # Init
         self.pooling = pooling
         self.device = device
