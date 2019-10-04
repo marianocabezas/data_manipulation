@@ -462,7 +462,7 @@ class ResBlock(BaseModel):
             filters_in, filters_out, 1,
         )
 
-    def forward(self, *inputs):
+    def forward(self, inputs):
         return self.conv(inputs) + self.res(inputs)
 
 
@@ -477,7 +477,7 @@ class ResBlockTranspose(BaseModel):
             filters_in, filters_out, 1,
         )
 
-    def forward(self, *inputs):
+    def forward(self, inputs):
         return self.conv(inputs) + self.res(inputs)
 
 
