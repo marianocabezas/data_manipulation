@@ -309,7 +309,7 @@ class Autoencoder(BaseModel):
         self.pooling = pooling
         self.device = device
         self.dropout = dropout
-        # Down path of the unet
+        # Down path
         self.down = nn.ModuleList([
             nn.Sequential(
                 nn.Conv3d(
@@ -330,7 +330,7 @@ class Autoencoder(BaseModel):
             nn.ReLU(),
         )
 
-        # Up path of the unet
+        # Up path
         down_out = conv_filters[-2::-1]
         up_out = conv_filters[:0:-1]
         deconv_in = map(sum, zip(down_out, up_out))
@@ -395,11 +395,7 @@ class AutoencoderDouble(Autoencoder):
             dropout=0,
     ):
         super().__init__(conv_filters, device, n_inputs, pooling, dropout)
-        # Init
-        self.pooling = pooling
-        self.device = device
-        self.dropout = dropout
-        # Down path of the unet
+        # Down path
         self.down = nn.ModuleList([
             nn.Sequential(
                 nn.Conv3d(
@@ -432,7 +428,7 @@ class AutoencoderDouble(Autoencoder):
             nn.ReLU(),
         )
 
-        # Up path of the unet
+        # Up path
         down_out = conv_filters[-2::-1]
         up_out = conv_filters[:0:-1]
         deconv_in = map(sum, zip(down_out, up_out))
@@ -497,11 +493,7 @@ class ResAutoencoder(Autoencoder):
             dropout=0,
     ):
         super().__init__(conv_filters, device, n_inputs, pooling, dropout)
-        # Init
-        self.pooling = pooling
-        self.device = device
-        self.dropout = dropout
-        # Down path of the unet
+        # Down path
         self.down = nn.ModuleList([
             nn.Sequential(
                 ResBlock(f_in, f_out, 3),
@@ -516,7 +508,7 @@ class ResAutoencoder(Autoencoder):
             nn.ReLU(),
         )
 
-        # Up path of the unet
+        # Up path
         down_out = conv_filters[-2::-1]
         up_out = conv_filters[:0:-1]
         deconv_in = map(sum, zip(down_out, up_out))
