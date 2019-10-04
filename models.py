@@ -127,7 +127,7 @@ class BaseModel(nn.Module):
         with torch.no_grad():
             self.t_val = time.time()
             self.eval()
-            best_loss_tr, _, _ = self.mini_batch_loop(train_loader)
+            best_loss_tr = self.mini_batch_loop(train_loader)
             best_loss_val, best_losses, best_acc = self.mini_batch_loop(
                 val_loader, False
             )
