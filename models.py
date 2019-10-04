@@ -90,7 +90,7 @@ class BaseModel(nn.Module):
             # (1 - rho) * exp(- gamma * t) + rho, gamma > 0
 
             self.print_progress(
-                batch_i, n_batches, loss_value, np.mean(losses), train
+                batch_i, n_batches, loss_value, np.mean(losses)
             )
 
         mean_loss = np.mean(losses)
@@ -259,15 +259,15 @@ class BaseModel(nn.Module):
                 self.final_dropout, self.dropout - self.ann_rate
             )
 
-    def print_progress(self, batch_i, n_batches, b_loss, mean_loss, train=True):
-        init_c = '\033[0m' if train else '\033[38;5;238m'
+    def print_progress(self, batch_i, n_batches, b_loss, mean_loss):
+        init_c = '\033[0m' if self.training else '\033[38;5;238m'
         whites = ' '.join([''] * 12)
         percent = 20 * (batch_i + 1) // n_batches
         progress_s = ''.join(['-'] * percent)
         remainder_s = ''.join([' '] * (20 - percent))
-        loss_name = 'train_loss' if train else 'val_loss'
+        loss_name = 'train_loss' if self.training else 'val_loss'
 
-        if train:
+        if self.training:
             t_out = time.time() - self.t_train
         else:
             t_out = time.time() - self.t_val
