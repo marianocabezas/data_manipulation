@@ -52,13 +52,14 @@ class BaseModel(nn.Module):
                 pred_labels = self(x.to(self.device))
 
             # Training losses
-            if self.training:
+            if train:
                 batch_losses = [
                     l_f['weight'] * l_f['f'](pred_labels, y)
                     for l_f in self.train_functions
                 ]
                 batch_loss = sum(batch_losses)
-                batch_loss.backward()
+                if self.training:
+                    batch_loss.backward()
                 self.optimizer_alg.step()
 
             # Validation losses
@@ -126,9 +127,7 @@ class BaseModel(nn.Module):
         with torch.no_grad():
             self.t_val = time.time()
             self.eval()
-            best_loss_tr, _, _ = self.mini_batch_loop(
-                train_loader, False
-            )
+            best_loss_tr, _, _ = self.mini_batch_loop(train_loader)
             best_loss_val, best_losses, best_acc = self.mini_batch_loop(
                 val_loader, False
             )
