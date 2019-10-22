@@ -77,6 +77,23 @@ def find_file(name, dirname):
     return os.path.join(dirname, result[0]) if result else None
 
 
+def get_dirs(path):
+    """
+    Function to get the folder name of the patients given a path.
+    :param path: Folder where the patients should be located.
+    :return: List of patient names.
+    """
+    # All patients (full path)
+    patient_paths = sorted(
+        filter(
+            lambda d: os.path.isdir(os.path.join(path, d)),
+            os.listdir(path)
+        )
+    )
+    # Patients used during training
+    return patient_paths
+
+
 def print_message(message):
     """
     Function to print a message with a custom specification
@@ -113,6 +130,11 @@ def time_to_string(time_val):
             time_val % 60
         )
     return time_s
+
+
+"""
+Data related functions
+"""
 
 
 def get_mask(mask_name, dilate=0, dtype=np.uint8):
