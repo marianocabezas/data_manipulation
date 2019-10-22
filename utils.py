@@ -3,6 +3,9 @@ import os
 import re
 from itertools import product
 import numpy as np
+from nibabel import load as load_nii
+from scipy.ndimage.morphology import binary_dilation as imdilate
+from scipy.ndimage.morphology import binary_erosion as imerode
 
 
 """
@@ -92,7 +95,8 @@ def print_message(message):
 
 def time_to_string(time_val):
     """
-
+    Function to convert from a time number to a printable string that
+     represents time in hours minutes and seconds.
     :param time_val: Time value in seconds (using functions from the time
      package)
     :return: String with a human format for time
@@ -109,3 +113,50 @@ def time_to_string(time_val):
             time_val % 60
         )
     return time_s
+
+
+def get_mask(mask_name, dilate=0, dtype=np.uint8):
+    """
+    Function to load a mask image
+    :param mask_name: Path to the mask image file
+    :param dilate: Dilation radius
+    :param dtype: Data type for the final mask
+    :return:
+    """
+    # Lesion mask
+    mask_image = load_nii(mask_name).get_data().astype(dtype)
+    if dilate > 0:
+        mask_d = imdilate(
+            mask_image,
+            iterations=dilate
+        )
+        mask_e = imerode(
+            mask_image,
+            iterations=dilate
+        )
+        mask_image = np.logical_and(mask_d, np.logical_not(mask_e)).astype(dtype)
+
+    return mask_image
+
+
+def get_normalised_image(image_name, mask, dtype=np.float32, masked=False):
+    """
+    Function to a load an image and normalised it (0 mean / 1 standard deviation)
+    :param image_name: Path to the image to be noramlised
+    :param mask: Mask defining the region of interest
+    :param dtype: Data type for the final image
+    :param masked: Whether to mask the image or not
+    :return:
+    """
+    mask_bin = mask.astype(np.bool)
+    image = load_nii(image_name).get_data().astype(dtype)
+    image_mu = np.mean(image[mask_bin])
+    image_sigma = np.std(image[mask_bin])
+    norm_image = (image - image_mu) / image_sigma
+
+    if masked:
+        output = norm_image * mask_bin.astype(dtype)
+    else:
+        output = norm_image
+
+    return output
