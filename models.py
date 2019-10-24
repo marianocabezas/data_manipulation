@@ -60,7 +60,7 @@ class BaseModel(nn.Module):
                 batch_loss = sum(batch_losses)
                 if self.training:
                     batch_loss.backward()
-                self.optimizer_alg.step()
+                    self.optimizer_alg.step()
 
             # Validation losses
             else:
