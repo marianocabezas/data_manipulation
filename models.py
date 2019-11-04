@@ -497,6 +497,7 @@ class ResAutoencoder(Autoencoder):
             nn.Sequential(
                 ResBlock(f_in, f_out, 3),
                 nn.ReLU(),
+                nn.InstanceNorm3d(f_out)
             ) for f_in, f_out in zip(
                 [n_inputs] + conv_filters[:-2], conv_filters[:-1]
             )
@@ -505,6 +506,7 @@ class ResAutoencoder(Autoencoder):
         self.u = nn.Sequential(
             ResBlock(conv_filters[-2], conv_filters[-1], 3),
             nn.ReLU(),
+            nn.InstanceNorm3d(conv_filters[-1])
         )
 
         # Up path
@@ -515,6 +517,7 @@ class ResAutoencoder(Autoencoder):
             nn.Sequential(
                 ResBlockTranspose(f_in, f_out, 3),
                 nn.ReLU(),
+                nn.InstanceNorm3d(f_out)
             ) for f_in, f_out in zip(
                 deconv_in, down_out
             )
