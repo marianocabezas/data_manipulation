@@ -66,7 +66,7 @@ class SpatialTransformer(nn.Module):
             mesh = torch.stack([
                 m_i.type(dtype=torch.float32)
                 for m_i in torch.meshgrid(linvec)
-            ]).unsqueeze(dim=0)
+            ]).unsqueeze(dim=0).to(self.device)
 
         # location should be mesh and delta
         if affine is not None:
