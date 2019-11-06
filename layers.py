@@ -55,14 +55,14 @@ class SpatialTransformer(nn.Module):
         """
 
         # parse shapes
-        df_shape = df.shape[2:]
-        final_shape = vol.shape[:2] + df_shape
-        weights_shape = (vol.shape[0], 1) + df_shape
-        nb_dims = len(df_shape)
+        im_shape = vol.shape[2:] if mesh is None else mesh.shape[2:]
+        final_shape = vol.shape[:2] + im_shape
+        weights_shape = (vol.shape[0], 1) + im_shape
+        nb_dims = len(im_shape)
         max_loc = [s - 1 for s in vol.shape[2:]]
 
         if mesh is None:
-            linvec = [torch.arange(0, s) for s in df_shape]
+            linvec = [torch.arange(0, s) for s in im_shape]
             mesh = torch.stack([
                 m_i.type(dtype=torch.float32)
                 for m_i in torch.meshgrid(linvec)
@@ -78,7 +78,7 @@ class SpatialTransformer(nn.Module):
             norm_mesh = torch.cat(
                 (
                     mesh.view(mesh.shape[:2] + (-1,)),
-                    torch.ones((len(vol), 1, np.prod(df_shape)))
+                    torch.ones((len(vol), 1, np.prod(im_shape)))
                 )
             )
             aff_mesh = torch.matmul(affine, norm_mesh)
