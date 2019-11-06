@@ -71,16 +71,17 @@ class SpatialTransformer(nn.Module):
         # location should be mesh and delta
         if affine is not None:
             # Reshape all the affine matrices (we are dealing with patches)
-            affine_matrix = affine.view(
-                vol.shape[:2] + (nb_dims, nb_dims + 1)
-            )
+            if len(affine.shape) == 3:
+                affine = affine.view(
+                    vol.shape[:2] + (nb_dims, nb_dims + 1)
+                )
             norm_mesh = torch.cat(
                 (
                     mesh.view(mesh.shape[:2] + (-1,)),
                     torch.ones((len(vol), 1, np.prod(df_shape)))
                 )
             )
-            aff_mesh = torch.matmul(affine_matrix, norm_mesh)
+            aff_mesh = torch.matmul(affine, norm_mesh)
             mesh = aff_mesh.view_as(mesh)
 
         loc = [
