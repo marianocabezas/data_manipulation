@@ -38,7 +38,7 @@ class SpatialTransformer(nn.Module):
         self.device = device
         self.linear_norm = linear_norm
 
-    def forward(self, inputs):
+    def forward(self, vol, df, mesh=None, affine=None):
         """
         Transform (interpolation N-D volumes (features) given shifts at each
         location in pytorch. Essentially interpolates volume vol at locations
@@ -46,41 +46,46 @@ class SpatialTransformer(nn.Module):
         This is a spatial transform in the sense that at location [x] we now
         have the data from, [x + shift] so we've moved data.
         Parameters
-            :param inputs: Input volume to be warped and deformation field.
+            :param vol: Input volume to be warped and deformation field.
+            :param df: Deformation field.
+            :param mesh: Mesh defining the original positions of each voxel.
+            :param affine: Affine transformation.
 
             :return new interpolated volumes in the same size as df
         """
 
         # parse shapes
-        n_inputs = len(inputs)
-        if n_inputs > 2:
-            vol, df, mesh = inputs
-        else:
-            vol, df = inputs
-            mesh = None
         df_shape = df.shape[2:]
         final_shape = vol.shape[:2] + df_shape
         weights_shape = (vol.shape[0], 1) + df_shape
         nb_dims = len(df_shape)
         max_loc = [s - 1 for s in vol.shape[2:]]
 
-        # location should be mesh and delta
-        if n_inputs > 2:
-            loc = [
-                mesh[:, d, ...] + df[:, d, ...]
-                for d in range(nb_dims)
-            ]
-        else:
+        if mesh is None:
             linvec = [torch.arange(0, s) for s in df_shape]
-            mesh = [
-                m_i.type(dtype=torch.float32) for m_i in torch.meshgrid(linvec)
-            ]
-            loc = [
-                mesh[d].to(df.device) + df[:, d, ...]
-                for d in range(nb_dims)
-            ]
+            mesh = torch.stack([
+                m_i.type(dtype=torch.float32)
+                for m_i in torch.meshgrid(linvec)
+            ]).unsqueeze(dim=0)
+
+        # location should be mesh and delta
+        if affine is not None:
+            # Reshape all the affine matrices (we are dealing with patches)
+            affine_matrix = affine.view(
+                vol.shape[:2] + (nb_dims, nb_dims + 1)
+            )
+            norm_mesh = torch.cat(
+                (
+                    mesh.view(mesh.shape[:2] + (-1,)),
+                    torch.ones((len(vol), 1, np.prod(df_shape)))
+                )
+            )
+            aff_mesh = torch.matmul(affine_matrix, norm_mesh)
+            mesh = aff_mesh.view_as(mesh)
+
         loc = [
-            torch.clamp(l, 0, m) for l, m in zip(loc, max_loc)
+            torch.clamp(mesh[:, d, ...] + df[:, d, ...], 0, m)
+            for d, m in zip(range(nb_dims), max_loc)
         ]
 
         # pre ind2sub setup
