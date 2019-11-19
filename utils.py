@@ -161,17 +161,27 @@ def get_mask(mask_name, dilate=0, dtype=np.uint8):
     return mask_image
 
 
-def get_normalised_image(image_name, mask, dtype=np.float32, masked=False):
+def get_normalised_image(
+        image_name, mask=None, dtype=np.float32, masked=False
+):
     """
-    Function to a load an image and normalised it (0 mean / 1 standard deviation)
+    Function to a load an image and normalised it (0 mean / 1 standard
+     deviation)
     :param image_name: Path to the image to be noramlised
     :param mask: Mask defining the region of interest
     :param dtype: Data type for the final image
     :param masked: Whether to mask the image or not
     :return:
     """
-    mask_bin = mask.astype(np.bool)
     image = load_nii(image_name).get_data().astype(dtype)
+
+    # If no mask is provided we use the image as a mask (all non-zero values)
+    if mask is None:
+        mask_bin = image.astype(np.bool)
+    else:
+        mask_bin = mask.astype(np.bool)
+
+    # Parameter estimation using the mask provided
     image_mu = np.mean(image[mask_bin])
     image_sigma = np.std(image[mask_bin])
     norm_image = (image - image_mu) / image_sigma
