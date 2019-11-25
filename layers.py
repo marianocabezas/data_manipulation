@@ -78,7 +78,9 @@ class SpatialTransformer(nn.Module):
             norm_mesh = torch.cat(
                 (
                     mesh.view(mesh.shape[:2] + (-1,)),
-                    torch.ones((len(vol), 1, np.prod(im_shape)))
+                    torch.ones(
+                        (len(vol), 1, np.prod(im_shape))
+                    ).to(self.device)
                 )
             )
             aff_mesh = torch.matmul(affine, norm_mesh)
