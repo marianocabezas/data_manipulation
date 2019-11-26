@@ -82,7 +82,7 @@ class SpatialTransformer(nn.Module):
                         (len(vol), 1, np.prod(im_shape))
                     ).to(self.device)
                 ), dim=1
-            )
+            ).unsqueeze(dim=1)
             aff_mesh = torch.matmul(affine, norm_mesh)
             mesh = aff_mesh.view_as(mesh)
 
