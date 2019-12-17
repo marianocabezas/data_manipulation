@@ -6,6 +6,7 @@ import numpy as np
 from nibabel import load as load_nii
 from scipy.ndimage.morphology import binary_dilation as imdilate
 from scipy.ndimage.morphology import binary_erosion as imerode
+import torch
 
 
 """
@@ -192,3 +193,26 @@ def get_normalised_image(
         output = norm_image
 
     return output
+
+
+def to_torch_var(
+        np_array,
+        device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
+        requires_grad=False,
+        dtype=torch.float32
+):
+    """
+    Function to convert a numpy array into a torch tensor for a given device
+    :param np_array: Original numpy array
+    :param device: Device where the tensor will be loaded
+    :param requires_grad: Whether it requires autograd or not
+    :param dtype: Datatype for the tensor
+    :return:
+    """
+    var = torch.tensor(
+        np_array,
+        requires_grad=requires_grad,
+        device=device,
+        dtype=dtype
+    )
+    return var
