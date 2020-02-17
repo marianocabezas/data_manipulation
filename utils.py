@@ -147,7 +147,7 @@ def get_mask(mask_name, dilate=0, dtype=np.uint8):
     :return:
     """
     # Lesion mask
-    mask_image = load_nii(mask_name).get_data().astype(dtype)
+    mask_image = load_nii(mask_name).get_fdata().astype(dtype)
     if dilate > 0:
         mask_d = imdilate(
             mask_image,
@@ -174,7 +174,7 @@ def get_normalised_image(
     :param masked: Whether to mask the image or not
     :return:
     """
-    image = load_nii(image_name).get_data().astype(dtype)
+    image = load_nii(image_name).get_fdata().astype(dtype)
 
     # If no mask is provided we use the image as a mask (all non-zero values)
     if mask is None:
