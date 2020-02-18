@@ -1,7 +1,7 @@
 import SimpleITK as SItk
 import os
 import numpy as np
-from utils import find_file
+from .utils import find_file
 
 
 def print_current(reg_method, tf):
