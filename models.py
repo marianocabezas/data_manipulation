@@ -301,53 +301,42 @@ class Autoencoder(BaseModel):
                 "cuda:0" if torch.cuda.is_available() else "cpu"
             ),
             n_inputs=1,
+            kernel=3,
             pooling=False,
             norm=None,
+            activation=None,
+            block=None,
             dropout=0,
     ):
         super().__init__()
         # Init
         if norm is None:
             norm = partial(lambda ch_in: nn.Sequential)
+        if activation is None:
+            activation = nn.ReLU
+        if block is None:
+            block = partial(
+                Conv3dBlock, kernel=kernel, norm=norm, activation=activation
+            )
         self.pooling = pooling
         self.device = device
         self.dropout = dropout
         # Down path
         self.down = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv3d(
-                    f_in, f_out, 3,
-                    padding=1,
-                ),
-                nn.ReLU(),
-                norm(f_out)
-            ) for f_in, f_out in zip(
+            block(f_in, f_out) for f_in, f_out in zip(
                 [n_inputs] + conv_filters[:-2], conv_filters[:-1]
             )
         ])
 
-        self.u = nn.Sequential(
-            nn.Conv3d(
-                conv_filters[-2], conv_filters[-1], 3,
-                padding=1
-            ),
-            nn.ReLU(),
-            norm(conv_filters[-1])
-        )
+        # Bottleneck
+        self.u = block(conv_filters[-2], conv_filters[-1])
 
         # Up path
         down_out = conv_filters[-2::-1]
         up_out = conv_filters[:0:-1]
         deconv_in = map(sum, zip(down_out, up_out))
         self.up = nn.ModuleList([
-            nn.Sequential(
-                nn.ConvTranspose3d(
-                    f_in, f_out, 3,
-                    padding=1
-                ),
-                nn.ReLU(),
-                norm(f_out)
-            ) for f_in, f_out in zip(
+            block(f_in, f_out, inv=True) for f_in, f_out in zip(
                 deconv_in, down_out
             )
         ])
@@ -389,210 +378,102 @@ class Autoencoder(BaseModel):
         return input_s
 
 
-class AutoencoderDouble(Autoencoder):
+class Conv3dBlock(BaseModel):
     def __init__(
-            self,
-            conv_filters,
-            device=torch.device(
-                "cuda:0" if torch.cuda.is_available() else "cpu"
-            ),
-            n_inputs=1,
-            pooling=False,
-            dropout=0,
+            self, filters_in, filters_out,
+            kernel=3, norm=None, activation=None, inv=False
     ):
-        super().__init__(conv_filters, device, n_inputs, pooling, dropout)
-        # Down path
-        self.down = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv3d(
-                    f_in, f_out, 3,
-                    padding=1,
-                ),
-                nn.ReLU(),
-                nn.InstanceNorm3d(f_out),
-                nn.Conv3d(
-                    f_out, f_out, 3,
-                    padding=1,
-                ),
-                nn.ReLU(),
-            ) for f_in, f_out in zip(
-                [n_inputs] + conv_filters[:-2], conv_filters[:-1]
-            )
-        ])
+        super().__init__()
+        if not inv:
+            conv = nn.Conv3d
+        else:
+            conv = nn.ConvTranspose3d
 
-        self.u = nn.Sequential(
-            nn.Conv3d(
-                conv_filters[-2], conv_filters[-1], 3,
-                padding=1
-            ),
-            nn.ReLU(),
-            nn.InstanceNorm3d(conv_filters[-1]),
-            nn.Conv3d(
-                conv_filters[-1], conv_filters[-1], 3,
-                padding=1
-            ),
-            nn.ReLU(),
+        self.block = nn.Sequential(
+            conv(filters_in, filters_out, kernel, padding=kernel // 2),
+            activation(),
+            norm(filters_out)
         )
 
-        # Up path
-        down_out = conv_filters[-2::-1]
-        up_out = conv_filters[:0:-1]
-        deconv_in = map(sum, zip(down_out, up_out))
-        self.up = nn.ModuleList([
-            nn.Sequential(
-                nn.ConvTranspose3d(
-                    f_in, f_out, 3,
-                    padding=1
-                ),
-                nn.ReLU(),
-                nn.InstanceNorm3d(f_out),
-                nn.ConvTranspose3d(
-                    f_out, f_out, 3,
-                    padding=1
-                ),
-                nn.ReLU(),
-            ) for f_in, f_out in zip(
-                deconv_in, down_out
-            )
-        ])
+    def forward(self, inputs):
+        return self.block(inputs)
 
 
-class ResConvBlock(BaseModel):
-    def __init__(self, filters_in, filters_out, kernel=3):
+class DoubleConv3dBlock(BaseModel):
+    def __init__(
+            self, filters_in, filters_out,
+            kernel=3, norm=None, activation=None, inv=False
+    ):
         super().__init__()
-        self.conv = nn.Conv3d(
+        if not inv:
+            conv = nn.Conv3d
+        else:
+            conv = nn.ConvTranspose3d
+
+        self.block = nn.Sequential(
+            conv(filters_in, filters_out, kernel, padding=kernel // 2),
+            activation(),
+            norm(filters_out),
+            conv(filters_out, filters_out, kernel, padding=kernel // 2),
+            activation(),
+            norm(filters_out)
+        )
+
+    def forward(self, inputs):
+        return self.block(inputs)
+
+
+class ResConv3dBlock(BaseModel):
+    def __init__(
+            self, filters_in, filters_out,
+            kernel=3, norm=None, activation=None, inv=False
+    ):
+        super().__init__()
+        if not inv:
+            conv = nn.Conv3d
+        else:
+            conv = nn.ConvTranspose3d
+
+        self.conv = conv(
             filters_in, filters_out, kernel,
             padding=kernel // 2
         )
-        self.res = nn.Conv3d(
+
+        self.res = conv(
             filters_in, filters_out, 1,
         )
 
-    def forward(self, inputs):
-        return self.conv(inputs) + self.res(inputs)
-
-
-class ResConvBlockTranspose(BaseModel):
-    def __init__(self, filters_in, filters_out, kernel=3):
-        super().__init__()
-        self.conv = nn.ConvTranspose3d(
-            filters_in, filters_out, kernel,
-            padding=kernel // 2
-        )
-        self.res = nn.ConvTranspose3d(
-            filters_in, filters_out, 1,
+        self.end_seq = nn.Sequential(
+            activation(),
+            norm(filters_out)
         )
 
     def forward(self, inputs):
-        return self.conv(inputs) + self.res(inputs)
-
-class ResBlock(BaseModel):
-    def __init__(self, filters_in, filters_out, kernel=3):
-        super().__init__()
-        self.conv = nn.Conv3d(
-            filters_in, filters_out, kernel,
-            padding=kernel // 2
-        )
-
-    def forward(self, inputs):
-        return self.conv(inputs) + inputs
+        res = self.conv(inputs) + self.res(inputs)
+        return self.end_seq(res)
 
 
-class ResBlockTranspose(BaseModel):
-    def __init__(self, filters_in, filters_out, kernel=3):
-        super().__init__()
-        self.conv = nn.ConvTranspose3d(
-            filters_in, filters_out, kernel,
-            padding=kernel // 2
-        )
-
-    def forward(self, inputs):
-        return self.conv(inputs) + inputs
-
-
-class ResAutoencoder(Autoencoder):
+class Res3dBlock(BaseModel):
     def __init__(
-            self,
-            conv_filters,
-            device=torch.device(
-                "cuda:0" if torch.cuda.is_available() else "cpu"
-            ),
-            n_inputs=1,
-            pooling=False,
-            dropout=0,
+            self, filters_in, filters_out,
+            kernel=3, norm=None, activation=None, inv=False
     ):
-        super().__init__(conv_filters, device, n_inputs, pooling, dropout)
-        # Down path
-        self.down = nn.ModuleList([
-            nn.Sequential(
-                ResBlock(f_in, f_out, 3),
-                nn.ReLU(),
-                nn.InstanceNorm3d(f_out)
-            ) for f_in, f_out in zip(
-                [n_inputs] + conv_filters[:-2], conv_filters[:-1]
-            )
-        ])
+        super().__init__()
+        if not inv:
+            conv = nn.Conv3d
+        else:
+            conv = nn.ConvTranspose3d
 
-        self.u = nn.Sequential(
-            ResBlock(conv_filters[-2], conv_filters[-1], 3),
-            nn.ReLU(),
-            nn.InstanceNorm3d(conv_filters[-1])
+        self.conv = conv(
+            filters_in, filters_out, kernel,
+            padding=kernel // 2
         )
 
-        # Up path
-        down_out = conv_filters[-2::-1]
-        up_out = conv_filters[:0:-1]
-        deconv_in = map(sum, zip(down_out, up_out))
-        self.up = nn.ModuleList([
-            nn.Sequential(
-                ResBlockTranspose(f_in, f_out, 3),
-                nn.ReLU(),
-                nn.InstanceNorm3d(f_out)
-            ) for f_in, f_out in zip(
-                deconv_in, down_out
-            )
-        ])
-
-
-class ResConvAutoencoder(Autoencoder):
-    def __init__(
-            self,
-            conv_filters,
-            device=torch.device(
-                "cuda:0" if torch.cuda.is_available() else "cpu"
-            ),
-            n_inputs=1,
-            pooling=False,
-            dropout=0,
-    ):
-        super().__init__(conv_filters, device, n_inputs, pooling, dropout)
-        # Down path
-        self.down = nn.ModuleList([
-            nn.Sequential(
-                ResConvBlock(f_in, f_out, 3),
-                nn.ReLU(),
-                nn.InstanceNorm3d(f_out)
-            ) for f_in, f_out in zip(
-                [n_inputs] + conv_filters[:-2], conv_filters[:-1]
-            )
-        ])
-
-        self.u = nn.Sequential(
-            ResConvBlock(conv_filters[-2], conv_filters[-1], 3),
-            nn.ReLU(),
-            nn.InstanceNorm3d(conv_filters[-1])
+        self.end_seq = nn.Sequential(
+            activation(),
+            norm(filters_out)
         )
 
-        # Up path
-        down_out = conv_filters[-2::-1]
-        up_out = conv_filters[:0:-1]
-        deconv_in = map(sum, zip(down_out, up_out))
-        self.up = nn.ModuleList([
-            nn.Sequential(
-                ResConvBlockTranspose(f_in, f_out, 3),
-                nn.ReLU(),
-                nn.InstanceNorm3d(f_out)
-            ) for f_in, f_out in zip(
-                deconv_in, down_out
-            )
-        ])
+    def forward(self, inputs):
+        res = self.conv(inputs) + inputs
+        return self.end_seq(res)
