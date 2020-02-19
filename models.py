@@ -1,4 +1,5 @@
 import time
+from functools import partial
 from copy import deepcopy
 import torch
 from torch import nn
@@ -301,10 +302,13 @@ class Autoencoder(BaseModel):
             ),
             n_inputs=1,
             pooling=False,
+            norm=None,
             dropout=0,
     ):
         super().__init__()
         # Init
+        if norm is None:
+            norm = partial(lambda ch_in: nn.Sequential)
         self.pooling = pooling
         self.device = device
         self.dropout = dropout
@@ -316,6 +320,7 @@ class Autoencoder(BaseModel):
                     padding=1,
                 ),
                 nn.ReLU(),
+                norm(f_out)
             ) for f_in, f_out in zip(
                 [n_inputs] + conv_filters[:-2], conv_filters[:-1]
             )
@@ -327,6 +332,7 @@ class Autoencoder(BaseModel):
                 padding=1
             ),
             nn.ReLU(),
+            norm(conv_filters[-1])
         )
 
         # Up path
@@ -340,6 +346,7 @@ class Autoencoder(BaseModel):
                     padding=1
                 ),
                 nn.ReLU(),
+                norm(f_out)
             ) for f_in, f_out in zip(
                 deconv_in, down_out
             )
