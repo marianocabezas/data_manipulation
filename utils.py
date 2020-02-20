@@ -147,7 +147,7 @@ def get_mask(mask_name, dilate=0, dtype=np.uint8):
     :return:
     """
     # Lesion mask
-    mask_image = load_nii(mask_name).get_fdata().astype(dtype) > 0.5
+    mask_image = (load_nii(mask_name).get_fdata() > 0.5).astype(dtype)
     if dilate > 0:
         mask_d = imdilate(
             mask_image,
