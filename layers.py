@@ -7,6 +7,48 @@ from torch import nn
 from torch.nn import functional as F
 
 
+class InterpolationLayer(nn.Module):
+    """
+    Misleading name that might get changed in the future.
+
+    The goal of this layer is perform interpolation given a set of points,
+    and their distance to the point we want to estimate.
+
+    Since the SpatialTransformer layer needs to flatten the distances and
+    values, a 1D vector is assumed. If that is not the case, using this layer
+    on non-1D inputs will most likely cause some kind of CUDA exception or even
+    a python one.
+    """
+
+    def __init__(
+            self,
+            n_points, n_features,
+            device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
+    ):
+        """
+        Parameters:
+            :param n_points: Number of input channels.
+            :param n_features: Number of features per point (multiple image
+             contrasts might be used, like T1, T2, FLAIR, etc.).
+            :param device: pytorch device that will store the layer.
+        """
+        super().__init__()
+        # The layer is basically a  1D convolution (again the distances and
+        # values are assumed to be a flattened vector) with softmax. Why? We
+        # want the weights to sum to one (softmax) but we also want the value
+        # of the weights of each intensity value to be related to the other
+        # points and their distances.
+        self.w = nn.Conv1d(n_points * (n_features + 1), n_points, 1)
+
+    def forward(self, values, distances):
+        data = torch.cat([values, distances], dim=1)
+        # So, we compute the weights...
+        weights = F.softmax(self.w(data), dim=1)
+        # And we then interpolate! (we'll leave the reshaping to the
+        # transformation layer).
+        return torch.sum(values * weights)
+
+
 class SpatialTransformer(nn.Module):
     """
     N-D Spatial Transformer pytorch
@@ -25,18 +67,23 @@ class SpatialTransformer(nn.Module):
             self,
             interp_method='linear',
             linear_norm=False,
+            n_images=2,
             device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
-            **kwargs
     ):
         """
         Parameters:
-            :param df_shape: Shape of the deformation field.
             :param interp_method: 'linear' or 'nearest'.
+            :param linear_norm: How to do the interpolation when linear.
+            :param device: pytorch device that will store the layer.
         """
         super().__init__()
         self.interp_method = interp_method
         self.device = device
         self.linear_norm = linear_norm
+        if self.interp_method == 'learned':
+            self.interp_layer = InterpolationLayer(4, n_images)
+        else:
+            self.interp_layer = None
 
     def forward(self, vol, df, mesh=None, affine=None):
         """
@@ -96,7 +143,7 @@ class SpatialTransformer(nn.Module):
 
         # interpolate
         interp_vol = None
-        if self.interp_method == 'linear':
+        if self.interp_method == 'linear' or self.interp_method == 'learned':
             # clip values
             loc0 = list(map(torch.floor, loc))
             loc0lst = [
@@ -112,13 +159,15 @@ class SpatialTransformer(nn.Module):
                 [f.type(torch.long) for f in loc1]
             ]
 
-            # compute the difference between the upper value and the original value
-            # differences are basically 1 - (pt - floor(pt))
-            #   because: floor(pt) + 1 - pt = 1 + (floor(pt) - pt) = 1 - (pt - floor(pt))
+            # Compute the difference between the upper value and the original
+            # value differences are basically 1 - (pt - floor(pt)).
+            #   because: floor(pt) + 1 - pt = 1 + (floor(pt) - pt) =
+            #             = 1 - (pt - floor(pt))
             diff_loc1 = [l1 - l for l1, l in zip(loc1, loc)]
             diff_loc1 = [torch.clamp(l, 0, 1) for l in diff_loc1]
             diff_loc0 = [1 - diff for diff in diff_loc1]
-            weights_loc = [diff_loc1, diff_loc0]  # note reverse ordering since weights are inverse of diff.
+            weights_loc = [diff_loc1, diff_loc0]  # note reverse ordering
+            # since weights are inverse of diff.
 
             # go through all the cube corners, indexed by a ND binary vector
             # e.g. [0, 0] means this "first" corner in a 2-D "cube"
@@ -147,11 +196,22 @@ class SpatialTransformer(nn.Module):
                     wt = sum(wts_lst) / norm_factor
                 else:
                     wt = reduce(mul, wts_lst)
+                if self.interp_layer is not None:
+                    return wt, vol_val
+                else:
+                    wt = torch.reshape(wt, weights_shape)
+                    return wt * vol_val
 
-                wt = torch.reshape(wt, weights_shape)
-                return wt * vol_val
+            if self.interp_layer is not None:
+                values = tuple(
+                    [
+                        self.interp_layer(v, d)
+                        for v, d in map(get_point_value, cube_pts)
+                    ]
+                )
+            else:
+                values = tuple(map(get_point_value, cube_pts))
 
-            values = tuple(map(get_point_value, cube_pts))
             interp_vol = torch.sum(torch.stack(values, dim=0), dim=0)
 
         elif self.interp_method == 'nearest':
