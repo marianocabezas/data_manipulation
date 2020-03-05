@@ -7,3 +7,5 @@ sklearn
 torch
 torchvision
 SimpleITK
+matplotlib
+statsmodels

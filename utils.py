@@ -1,6 +1,8 @@
 import time
 import os
 import re
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
 from itertools import product
 import numpy as np
 from nibabel import load as load_nii
@@ -136,6 +138,71 @@ def time_to_string(time_val):
 """
 Data related functions
 """
+
+
+def save_bland_altman(x, y, suffix, path):
+    f, ax = plt.subplots(1, figsize=(8, 6))
+    plt.title('Bland Altman plot')
+    sm.graphics.mean_diff_plot(x, y, ax=ax)
+
+    plt.savefig(os.path.join(
+        path, 'bland-altman_{:}.png'.format(suffix)
+    ))
+    plt.close()
+
+
+def save_correlation(
+        x, y, suffix, path, xlabel='Model', ylabel='Manual', verbose=0
+):
+    results = sm.OLS(y, sm.add_constant(x)).fit()
+
+    if verbose > 1:
+        print(results.summary())
+
+    plt.title('Correlation r-squared = {:5.3f}'.format(results.rsquared))
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+
+    plt.scatter(x, y)
+    x_plot = np.linspace(0, np.round(np.max(x)), 1000)
+    plt.plot(x_plot, x_plot * results.params[1] + results.params[0])
+
+    plt.savefig(os.path.join(
+        path, 'correlation_r{:5.3f}{:}.png'.format(results.rsquared, suffix)
+    ))
+    plt.close()
+
+
+def save_scatter(
+        x, y, suffix, path,
+        xmin=None, xmax=None, ymin=None, ymax=None,
+        xlabel='Model', ylabel='Manual'
+):
+    # Init
+    if xmin is None:
+        xmin = np.min(x)
+    if xmax is None:
+        xmax = np.max(x)
+    if ymin is None:
+        ymin = np.min(y)
+    if ymax is None:
+        ymax = np.max(y)
+
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    plt.title('Scatterplot {:} vs {:}'.format(xlabel, ylabel))
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+
+    plt.scatter(x, y)
+
+    ax.set_xlim(xmin=xmin, xmax=xmax)
+    ax.set_ylim(ymin=ymin, ymax=ymax)
+
+    plt.savefig(os.path.join(
+        path, 'scatter_{:}.png'.format(suffix)
+    ))
+    plt.close()
 
 
 def get_mask(mask_name, dilate=0, dtype=np.uint8):
