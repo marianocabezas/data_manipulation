@@ -38,7 +38,12 @@ class InterpolationLayer(nn.Module):
         # want the weights to sum to one (softmax) but we also want the value
         # of the weights of each intensity value to be related to the other
         # points and their distances.
-        self.w = nn.Conv1d(n_points * (n_features + 1), n_points, 1)
+        self.w = nn.Sequential(
+            nn.Conv1d(n_points * (n_features + 1), n_features, 1),
+            nn.ReLU(),
+            nn.BatchNorm1d(n_features),
+            nn.Conv1d(n_features, n_points, 1)
+        )
 
     def forward(self, values, distances):
         data = torch.cat([values, distances], dim=1)
