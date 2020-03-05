@@ -12,6 +12,7 @@ class BaseModel(nn.Module):
     def __init__(self):
         super().__init__()
         # Init values
+        self.init = True
         self.optimizer_alg = None
         self.epoch = 0
         self.t_train = 0
@@ -125,52 +126,58 @@ class BaseModel(nn.Module):
         t_start = time.time()
 
         # Initial losses
-        with torch.no_grad():
-            self.t_val = time.time()
-            self.eval()
-            best_loss_tr = self.mini_batch_loop(train_loader)
-            best_loss_val, best_losses, best_acc = self.mini_batch_loop(
-                val_loader, False
-            )
-            if verbose:
-                # Mid losses check
-                epoch_s = '\033[32mInit     \033[0m'
-                tr_loss_s = '\033[32m{:7.4f}\033[0m'.format(best_loss_tr)
-                loss_s = '\033[32m{:7.4f}\033[0m'.format(best_loss_val)
-                losses_s = [
-                    '\033[36m{:8.4f}\033[0m'.format(l) for l in best_losses
-                ]
-                # Acc check
-                acc_s = [
-                    '\033[36m{:8.4f}\033[0m'.format(a) for a in best_acc
-                ]
-                t_out = time.time() - self.t_val
-                t_s = time_to_string(t_out)
-
-                drop_s = '{:5.3f}'.format(self.dropout)
-
-                l_bars = '--|--'.join(
-                    ['-' * 5] * 2 +
-                    ['-' * 6] * (len(l_names[2:]) + len(acc_names)) +
-                    ['-' * 3]
+        if self.init:
+            with torch.no_grad():
+                self.t_val = time.time()
+                self.eval()
+                best_loss_tr = self.mini_batch_loop(train_loader)
+                best_loss_val, best_losses, best_acc = self.mini_batch_loop(
+                    val_loader, False
                 )
-                l_hdr = '  |  '.join(l_names + acc_names + ['drp'])
-                print('\033[K', end='')
-                whites = ' '.join([''] * 12)
-                print('{:}Epoch num |  {:}  |'.format(whites, l_hdr))
-                print('{:}----------|--{:}--|'.format(whites, l_bars))
-                final_s = whites + ' | '.join(
-                    [epoch_s, tr_loss_s, loss_s] +
-                    losses_s + acc_s + [drop_s, t_s]
-                )
-                print(final_s)
+                if verbose:
+                    # Mid losses check
+                    epoch_s = '\033[32mInit     \033[0m'
+                    tr_loss_s = '\033[32m{:7.4f}\033[0m'.format(best_loss_tr)
+                    loss_s = '\033[32m{:7.4f}\033[0m'.format(best_loss_val)
+                    losses_s = [
+                        '\033[36m{:8.4f}\033[0m'.format(l) for l in best_losses
+                    ]
+                    # Acc check
+                    acc_s = [
+                        '\033[36m{:8.4f}\033[0m'.format(a) for a in best_acc
+                    ]
+                    t_out = time.time() - self.t_val
+                    t_s = time_to_string(t_out)
+
+                    drop_s = '{:5.3f}'.format(self.dropout)
+
+                    l_bars = '--|--'.join(
+                        ['-' * 5] * 2 +
+                        ['-' * 6] * (len(l_names[2:]) + len(acc_names)) +
+                        ['-' * 3]
+                    )
+                    l_hdr = '  |  '.join(l_names + acc_names + ['drp'])
+                    print('\033[K', end='')
+                    whites = ' '.join([''] * 12)
+                    print('{:}Epoch num |  {:}  |'.format(whites, l_hdr))
+                    print('{:}----------|--{:}--|'.format(whites, l_bars))
+                    final_s = whites + ' | '.join(
+                        [epoch_s, tr_loss_s, loss_s] +
+                        losses_s + acc_s + [drop_s, t_s]
+                    )
+                    print(final_s)
+        else:
+            best_loss_tr = np.inf
+            best_loss_val = np.inf
+            best_losses = [np.inf] * len(self.val_functions)
+            best_acc = [-np.inf] * len(self.acc_functions)
 
         for self.epoch in range(epochs):
             # Main epoch loop
             self.t_train = time.time()
             self.train()
             loss_tr = self.mini_batch_loop(train_loader)
-            improvement_tr = loss_tr < best_loss_tr
+            improvement_tr = best_loss_tr > loss_tr
             if improvement_tr:
                 best_loss_tr = loss_tr
                 tr_loss_s = '\033[32m{:7.4f}\033[0m'.format(loss_tr)
@@ -186,31 +193,31 @@ class BaseModel(nn.Module):
 
             # Mid losses check
             losses_s = [
-                '\033[36m{:8.4f}\033[0m'.format(l) if pl > l
-                else '{:8.4f}'.format(l) for pl, l in zip(
+                '\033[36m{:8.4f}\033[0m'.format(l) if bl > l
+                else '{:8.4f}'.format(l) for bl, l in zip(
                     best_losses, mid_losses
                 )
             ]
             best_losses = [
-                l if pl > l else pl for pl, l in zip(
+                l if bl > l else bl for bl, l in zip(
                     best_losses, mid_losses
                 )
             ]
             # Acc check
             acc_s = [
-                '\033[36m{:8.4f}\033[0m'.format(a) if pa < a
-                else '{:8.4f}'.format(a) for pa, a in zip(
+                '\033[36m{:8.4f}\033[0m'.format(a) if ba < a
+                else '{:8.4f}'.format(a) for ba, a in zip(
                     best_acc, acc
                 )
             ]
             best_acc = [
-                a if pa < a else pa for pa, a in zip(
+                a if ba < a else ba for ba, a in zip(
                     best_acc, acc
                 )
             ]
 
             # Patience check
-            improvement_val = loss_val < best_loss_val
+            improvement_val = best_loss_val > loss_val
             loss_s = '{:7.4f}'.format(loss_val)
             if improvement_val:
                 best_loss_val = loss_val
