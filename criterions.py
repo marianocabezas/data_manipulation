@@ -83,8 +83,8 @@ def flip_loss(
     assert regularizer is None or type(regularizer) is int,\
         'Wrong type for the norm type'
     norm_q = q * q_factor
-    flip_0 = (pred > 0.5).type_as(pred) * (1 - target)
-    flip_1 = (pred > 0.5).type_as(pred) * target
+    flip_0 = (pred >= 0.5).type_as(pred) * (1 - target)
+    flip_1 = (pred < 0.5).type_as(pred) * target
     z = flip_0 + flip_1
     q_target = (1 - target) * norm_q + target * (1 - norm_q)
     loss_seg = base(pred, q_target.type_as(pred).detach())
