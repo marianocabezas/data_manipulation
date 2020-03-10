@@ -401,6 +401,11 @@ class BaseModel(nn.Module):
 
 
 class Autoencoder(BaseModel):
+    """
+    Main autoencoder class. This class can actually be parameterised on init
+    to have different "main blocks", normalisation layers and activation
+    functions.
+    """
     def __init__(
             self,
             conv_filters,
@@ -415,6 +420,26 @@ class Autoencoder(BaseModel):
             block=None,
             dropout=0,
     ):
+        """
+        Constructor of the class. It's heavily parameterisable to allow for
+        different autoencoder setups (residual blocks, double convolutions,
+        different normalisation and activations).
+        :param conv_filters: Filters for both the encoder and decoder. The
+         decoder mirrors the filters of the encoder.
+        :param device: Device where the model is stored (default is the first
+         cuda device).
+        :param n_inputs: Number of input channels.
+        :param kernel: Kernel width for the main block.
+        :param pooling: Whether to use pooling or not.
+        :param norm: Normalisation block (it has to be a pointer to a valid
+         normalisation Module).
+        :param activation: Activation block (it has to be a pointer to a valid
+         activation Module).
+        :param block: Main block. It has to be a pointer to a valid block from
+         this python file (otherwise it will fail when trying to create a
+         partial of it).
+        :param dropout: Dropout value.
+        """
         super().__init__()
         # Init
         if norm is None:
@@ -422,33 +447,43 @@ class Autoencoder(BaseModel):
         if activation is None:
             activation = nn.ReLU
         if block is None:
-            block = partial(
-                Conv3dBlock, kernel=kernel, norm=norm, activation=activation
-            )
+            block = Conv3dBlock
+        block_partial = partial(
+            block, kernel=kernel, norm=norm, activation=activation
+        )
         self.pooling = pooling
         self.device = device
         self.dropout = dropout
+
         # Down path
+        # We'll use the partial and fill it with the channels for input and
+        # output for each level.
         self.down = nn.ModuleList([
-            block(f_in, f_out) for f_in, f_out in zip(
+            block_partial(f_in, f_out) for f_in, f_out in zip(
                 [n_inputs] + conv_filters[:-2], conv_filters[:-1]
             )
         ])
 
         # Bottleneck
-        self.u = block(conv_filters[-2], conv_filters[-1])
+        self.u = block_partial(conv_filters[-2], conv_filters[-1])
 
         # Up path
+        # Now we'll do the same we did on the down path, but mirrored. We also
+        # need to account for the skip connections, that's why we sum the
+        # channels for both outputs. That basically means that we are
+        # concatenating with the skip connection, and not suming.
         down_out = conv_filters[-2::-1]
         up_out = conv_filters[:0:-1]
         deconv_in = map(sum, zip(down_out, up_out))
         self.up = nn.ModuleList([
-            block(f_in, f_out, inv=True) for f_in, f_out in zip(
+            block_partial(f_in, f_out, inv=True) for f_in, f_out in zip(
                 deconv_in, down_out
             )
         ])
 
     def forward(self, input_s):
+        # We need to keep track of the convolutional outputs, for the skip
+        # connections.
         down_inputs = []
         for c in self.down:
             c.to(self.device)
@@ -456,6 +491,7 @@ class Autoencoder(BaseModel):
                 c(input_s), self.dropout, self.training
             )
             down_inputs.append(input_s)
+            # Remember that pooling is optional
             if self.pooling:
                 input_s = F.max_pool3d(input_s, 2)
 
@@ -464,6 +500,7 @@ class Autoencoder(BaseModel):
 
         for d, i in zip(self.up, down_inputs[::-1]):
             d.to(self.device)
+            # Remember that pooling is optional
             if self.pooling:
                 input_s = F.dropout3d(
                     d(
