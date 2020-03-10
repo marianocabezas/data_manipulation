@@ -249,6 +249,8 @@ class BaseModel(nn.Module):
             if no_improv_e == int(patience / (1 - self.dropout)):
                 break
 
+            self.epoch_update(epochs)
+
         self.epoch = best_e
         self.load_state_dict(self.best_state)
         t_end = time.time() - t_start
@@ -260,6 +262,9 @@ class BaseModel(nn.Module):
                         self.epoch + 1, t_end_s, best_loss_val, best_e
                     )
             )
+
+    def epoch_update(self, epochs):
+        return None
 
     def dropout_update(self):
         if self.final_dropout <= self.dropout:
