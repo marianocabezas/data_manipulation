@@ -45,6 +45,9 @@ def dsc_loss(pred, target, smooth=0.1):
 def focal_loss(pred, target, alpha=0.2, gamma=2.0):
     """
     Function to compute the focal loss based on:
+    Tsung-Yi Lin, Priya Goyal, Ross Girshick, Kaiming He, Piotr Dollár. "Focal
+    Loss for Dense Object Detection".
+    https://arxiv.org/abs/1708.02002
     :param pred: Predicted values. The shape of the tensor should be:
      [n_batches, data_shape]
     :param target: Ground truth values. The shape of the tensor should be:
