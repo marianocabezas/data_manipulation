@@ -6,6 +6,7 @@ from torch import nn
 import torch.nn.functional as F
 import numpy as np
 from .utils import time_to_string
+from .layers import NoOp
 
 
 class BaseModel(nn.Module):
@@ -323,7 +324,7 @@ class Autoencoder(BaseModel):
         super().__init__()
         # Init
         if norm is None:
-            norm = partial(lambda ch_in: nn.Sequential)
+            norm = partial(lambda ch_in: nn.Sequential())
         if activation is None:
             activation = nn.ReLU
         if block is None:
