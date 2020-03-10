@@ -8,6 +8,7 @@ import numpy as np
 from nibabel import load as load_nii
 from scipy.ndimage.morphology import binary_dilation as imdilate
 from scipy.ndimage.morphology import binary_erosion as imerode
+from scipy.stats import spearmanr, kendalltau
 import torch
 
 
@@ -155,11 +156,19 @@ def save_correlation(
         x, y, suffix, path, xlabel='Model', ylabel='Manual', verbose=0
 ):
     results = sm.OLS(y, sm.add_constant(x)).fit()
+    spr_coef, spr_p = spearmanr(x, y)
+    tau_coef, tau_p = kendalltau(x, y)
 
     if verbose > 1:
         print(results.summary())
 
-    plt.title('Correlation r-squared = {:5.3f}'.format(results.rsquared))
+    plt.title(
+        'Correlation r-squared = {:5.3f} / '
+        'Spearman = {:5.3f} ({:5.3f})  / '
+        'Kendall''s τ = {:3.5f} ({:5.3f})'.format(
+            results.rsquared, spr_coef, spr_p, tau_coef, tau_p
+        )
+    )
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
 
