@@ -6,7 +6,6 @@ from torch import nn
 import torch.nn.functional as F
 import numpy as np
 from .utils import time_to_string
-from .layers import NoOp
 
 
 class BaseModel(nn.Module):
