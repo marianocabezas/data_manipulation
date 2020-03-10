@@ -296,3 +296,15 @@ class SmoothingLayer(nn.Module):
         smoothed_x = conv_f[dims - 1](x, final_kernel, padding=padding)
 
         return smoothed_x
+
+
+class NoOp(nn.Module):
+    """
+    Layer that returns the same input. The goal is to use it as a placeholder.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, inputs, **kwargs):
+        return inputs
