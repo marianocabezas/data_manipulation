@@ -194,7 +194,6 @@ def save_correlation(
 
     plt.close()
 
-
     return results.rsquared, spr_coef, tau_coef
 
 
