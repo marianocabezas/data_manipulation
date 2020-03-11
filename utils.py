@@ -175,7 +175,7 @@ def save_correlation(
     plt.plot(x_plot, x_plot * results.params[1] + results.params[0], 'k')
 
     plt.savefig(os.path.join(
-        path, 'correlation_r{:5.3f}{:}.png'.format(results.rsquared, suffix)
+        path, 'correlation_r{:5.3f}.{:}.png'.format(results.rsquared, suffix)
     ))
     plt.close()
 
@@ -191,6 +191,11 @@ def save_correlation(
 
     plt.scatter(x, y)
     plt.plot(z[:, 0], z[:, 1], 'k')
+    plt.savefig(os.path.join(
+        path, 'lowess_S{:5.3f}.t{:5.3f}.{:}.png'.format(
+            spr_coef, tau_coef, suffix
+        )
+    ))
 
     plt.close()
 
