@@ -195,6 +195,9 @@ def save_correlation(
     plt.close()
 
 
+    return results.rsquared, spr_coef, tau_coef
+
+
 def save_scatter(
         x, y, suffix, path,
         xmin=None, xmax=None, ymin=None, ymax=None,
