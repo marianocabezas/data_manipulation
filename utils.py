@@ -174,11 +174,26 @@ def save_correlation(
 
     plt.scatter(x, y)
     x_plot = np.linspace(0, np.round(np.max(x)), 1000)
-    plt.plot(x_plot, x_plot * results.params[1] + results.params[0])
+    plt.plot(x_plot, x_plot * results.params[1] + results.params[0], 'k')
 
     plt.savefig(os.path.join(
         path, 'correlation_r{:5.3f}{:}.png'.format(results.rsquared, suffix)
     ))
+    plt.close()
+
+    z = sm.nonparametric.lowess(x, y)
+    plt.title(
+        'Spearman = {:5.3f} ({:5.3f})  / '
+        'Kendall''s τ = {:3.5f} ({:5.3f})'.format(
+            spr_coef, spr_p, tau_coef, tau_p
+        )
+    )
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+
+    plt.scatter(x, y)
+    plt.plot(z[:, 0], z[:, 1], 'k')
+
     plt.close()
 
 
