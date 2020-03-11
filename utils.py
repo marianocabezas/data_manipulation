@@ -163,10 +163,8 @@ def save_correlation(
         print(results.summary())
 
     plt.title(
-        'Correlation r-squared = {:5.3f} / '
-        'Spearman = {:5.3f} ({:5.3f})  / '
-        'Kendall''s τ = {:3.5f} ({:5.3f})'.format(
-            results.rsquared, spr_coef, spr_p, tau_coef, tau_p
+        'Correlation r-squared = {:5.3f} ({:5.3f}, {:5.3f})'.format(
+            results.rsquared, results.pvalues[0], results.pvalues[1]
         )
     )
     plt.xlabel(xlabel)
