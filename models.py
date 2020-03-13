@@ -117,7 +117,7 @@ class BaseModel(nn.Module):
                 ])
                 mid_losses.append([l.tolist() for l in batch_losses])
                 batch_accs = [
-                    l_f['weight'] * l_f['f'](pred_labels, y)
+                    l_f['f'](pred_labels, y)
                     for l_f in self.acc_functions
                 ]
                 accs.append([a.tolist() for a in batch_accs])
