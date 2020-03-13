@@ -190,7 +190,7 @@ def save_correlation(
     plt.ylabel(ylabel)
 
     plt.scatter(x, y)
-    plt.plot(z[:, 0], z[:, 1], 'k')
+    plt.plot(z[:, 1], z[:, 0], 'k')
     plt.savefig(os.path.join(
         path, 'lowess_S{:5.3f}.t{:5.3f}.{:}.png'.format(
             spr_coef, tau_coef, suffix
