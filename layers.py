@@ -63,7 +63,7 @@ class SpatialTransformer(nn.Module):
     (not absolute locations) at each voxel,
 
     This code is a reimplementation of
-    https://github.com/marianocabezas/voxelmorph/tree/master/ext/neuron in
+    https://github.com/voxelmorph/voxelmorph/tree/master/ext/neuron in
     pytorch with some liberties taken. The goal is to adapt the code to
     some kind of hybrid method to both do dense registration and mask tracking.
     """
@@ -96,7 +96,7 @@ class SpatialTransformer(nn.Module):
         location in pytorch. Essentially interpolates volume vol at locations
         determined by loc_shift.
         This is a spatial transform in the sense that at location [x] we now
-        have the data from, [x + shift] so we've moved data.
+        have the data from [x + shift].
         Parameters
             :param vol: Input volume to be warped and deformation field.
             :param df: Deformation field.
@@ -165,7 +165,7 @@ class SpatialTransformer(nn.Module):
             ]
 
             # Compute the difference between the upper value and the original
-            # value differences are basically 1 - (pt - floor(pt)).
+            # value. Differences are basically 1 - (pt - floor(pt)).
             #   because: floor(pt) + 1 - pt = 1 + (floor(pt) - pt) =
             #             = 1 - (pt - floor(pt))
             diff_loc1 = [l1 - l for l1, l in zip(loc1, loc)]
@@ -194,8 +194,8 @@ class SpatialTransformer(nn.Module):
 
                 vol_val = torch.reshape(vol_val_flat, final_shape)
                 # get the weight of this cube_pt based on the distance
-                # if c[d] is 0 --> want weight = 1 - (pt - floor[pt]) = diff_loc1
-                # if c[d] is 1 --> want weight = pt - floor[pt] = diff_loc0
+                # if c[d] is 0 --> weight = 1 - (pt - floor(pt)) = diff_loc1
+                # if c[d] is 1 --> weight = pt - floor(pt) = diff_loc0
                 wts_lst = [weights_loc[cd][i] for i, cd in enumerate(point)]
                 if self.linear_norm:
                     wt = sum(wts_lst) / norm_factor
@@ -243,7 +243,7 @@ class SmoothingLayer(nn.Module):
     """
     N-D Smoothing layer pytorch
 
-    The layer defines a trainable Gaussian smoothing kernel. While
+    This layer defines a trainable Gaussian smoothing kernel. While
     convolutional layers might learn such a kernel, the idea is to impose
     smoothing to the activations of the previous layer. The only parameter
     is the sigma value for the Gaussian kernel of a fixed size.
