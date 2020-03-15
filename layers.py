@@ -182,7 +182,9 @@ class SpatialTransformer(nn.Module):
             def get_point_value(point):
                 subs = [locs[cd][i] for i, cd in enumerate(point)]
                 loc_list_p = [s * l for s, l in zip(subs, d_size)]
-                idx_p = torch.sum(torch.stack(loc_list_p, dim=0), dim=0)
+                idx_p = torch.sum(
+                    torch.stack(loc_list_p, dim=0), dim=0
+                ).type(torch.long)
 
                 vol_val_flat = torch.stack(
                     [torch.stack(
