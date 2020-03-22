@@ -1,5 +1,5 @@
 # Data manipulation module
-Module to generate feature vectors to train Deep Learning algorithms based on the Theano and Lasagne modules for Python 2.7. With this module we can create patches of 3D images, as well as work on under- and over-sampling of a given feature set (independently of the size).
+Module to generate feature vectors to train Deep Learning algorithms based on pytorch for Python 3. With this module we can create patches of 3D images, as well as work on under- and over-sampling of a given feature set (independently of the size).
 
 ## Future
 The goal is to implement several tests to generate features to test different CNN/CEN configurations. TODO:
