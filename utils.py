@@ -37,6 +37,7 @@ def color_codes():
         'c': '\033[36m',
         '0.75': '\033[37m',
         'lgy': '\033[37m',
+        'clr': '\033[K',
     }
     return codes
 
