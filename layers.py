@@ -52,7 +52,7 @@ class InterpolationLayer(nn.Module):
         data = torch.cat([val_flat, dist_flat], dim=1)
         # So, we compute the weights...
         self.w.to(self.device)
-        weights = F.softmax(self.w(data), dim=-1)
+        weights = F.softmax(self.w(data), dim=1)
         # And we then interpolate! (we'll leave the reshaping to the
         # transformation layer).
         return (val_flat * weights).view_as(values)
