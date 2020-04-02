@@ -46,12 +46,14 @@ class InterpolationLayer(nn.Module):
         )
 
     def forward(self, distances, values):
-        data = torch.cat([values, distances], dim=1)
+        dist_flat = distances.view(distances.shape[:2] + (-1,))
+        val_flat = distances.view(values.shape[:2] + (-1,))
+        data = torch.cat([val_flat, dist_flat], dim=1)
         # So, we compute the weights...
-        weights = F.softmax(self.w(data), dim=1)
+        weights = F.softmax(self.w(data), dim=-1)
         # And we then interpolate! (we'll leave the reshaping to the
         # transformation layer).
-        return torch.sum(values * weights)
+        return (val_flat * weights).view_as(values)
 
 
 class SpatialTransformer(nn.Module):
