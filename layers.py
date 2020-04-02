@@ -46,6 +46,7 @@ class InterpolationLayer(nn.Module):
         )
 
     def forward(self, values, distances):
+        print(values.shape, distances.shape)
         data = torch.cat([values, distances], dim=1)
         # So, we compute the weights...
         weights = F.softmax(self.w(data), dim=1)
