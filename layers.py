@@ -45,8 +45,7 @@ class InterpolationLayer(nn.Module):
             nn.Conv1d(n_features, n_points, 1)
         )
 
-    def forward(self, values, distances):
-        print(values.shape, distances.shape)
+    def forward(self, distances, values):
         data = torch.cat([values, distances], dim=1)
         # So, we compute the weights...
         weights = F.softmax(self.w(data), dim=1)
@@ -204,17 +203,17 @@ class SpatialTransformer(nn.Module):
                     wt = sum(wts_lst) / norm_factor
                 else:
                     wt = reduce(mul, wts_lst)
+                wt = torch.reshape(wt, weights_shape)
                 if self.interp_layer is not None:
                     return wt, vol_val
                 else:
-                    wt = torch.reshape(wt, weights_shape)
                     return wt * vol_val
 
             if self.interp_layer is not None:
                 values = tuple(
                     [
-                        self.interp_layer(v, d)
-                        for v, d in map(get_point_value, cube_pts)
+                        self.interp_layer(d, v)
+                        for d, v in map(get_point_value, cube_pts)
                     ]
                 )
             else:
