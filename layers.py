@@ -33,6 +33,7 @@ class InterpolationLayer(nn.Module):
             :param device: pytorch device that will store the layer.
         """
         super().__init__()
+        self.device = device
         # The layer is basically a  1D convolution (again the distances and
         # values are assumed to be a flattened vector) with softmax. Why? We
         # want the weights to sum to one (softmax) but we also want the value
@@ -50,6 +51,7 @@ class InterpolationLayer(nn.Module):
         val_flat = distances.view(values.shape[:2] + (-1,))
         data = torch.cat([val_flat, dist_flat], dim=1)
         # So, we compute the weights...
+        self.w.to(self.device)
         weights = F.softmax(self.w(data), dim=-1)
         # And we then interpolate! (we'll leave the reshaping to the
         # transformation layer).
@@ -88,7 +90,7 @@ class SpatialTransformer(nn.Module):
         self.device = device
         self.linear_norm = linear_norm
         if self.interp_method == 'learned':
-            self.interp_layer = InterpolationLayer(4, n_images)
+            self.interp_layer = InterpolationLayer(8, n_images)
         else:
             self.interp_layer = None
 
