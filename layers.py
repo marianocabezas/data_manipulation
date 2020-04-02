@@ -77,6 +77,7 @@ class SpatialTransformer(nn.Module):
             interp_method='linear',
             linear_norm=False,
             n_images=2,
+            dim=3,
             device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
     ):
         """
@@ -90,7 +91,7 @@ class SpatialTransformer(nn.Module):
         self.device = device
         self.linear_norm = linear_norm
         if self.interp_method == 'learned':
-            self.interp_layer = InterpolationLayer(8, n_images)
+            self.interp_layer = InterpolationLayer(2**dim, n_images)
         else:
             self.interp_layer = None
 
