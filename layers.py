@@ -212,11 +212,14 @@ class SpatialTransformer(nn.Module):
                     return wt * vol_val
 
             if self.interp_layer is not None:
-                values = tuple(
-                    [
-                        self.interp_layer(d, v)
-                        for d, v in map(get_point_value, cube_pts)
-                    ]
+                dist_values = [
+                    (d, v)
+                    for d, v in map(get_point_value, cube_pts)
+                ]
+                dist, values = zip(*dist_values)
+                self.interp_layer(
+                    torch.stack(dist, dim=1),
+                    torch.stack(values, dim=1)
                 )
             else:
                 values = tuple(map(get_point_value, cube_pts))
