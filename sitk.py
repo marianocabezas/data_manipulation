@@ -323,7 +323,7 @@ def itkrigid(
         print('Rigid initial registration')
         registration.AddCommand(
             SItk.sitkMultiResolutionIterationEvent,
-            lambda: print('> {:} ({:}) level {:d}'.format(
+            lambda: print('\033[K> {:} ({:}) level {:d}'.format(
                 registration.GetName(),
                 name,
                 registration.GetCurrentLevel()
@@ -339,7 +339,7 @@ def itkrigid(
     registration.SetInitialTransform(initial_tf)
     registration.Execute(fixed_float32, moving_float32)
     if verbose > 0:
-        print('Registration finished')
+        print('\033[KRegistration finished')
 
     return initial_tf
 
@@ -430,7 +430,7 @@ def itkaffine(
         print('Affine registration')
         registration.AddCommand(
             SItk.sitkMultiResolutionIterationEvent,
-            lambda: print('> {:} ({:}) level {:d}'.format(
+            lambda: print('\033[K> {:} ({:}) level {:d}'.format(
                 registration.GetName(),
                 name,
                 registration.GetCurrentLevel()
@@ -447,7 +447,7 @@ def itkaffine(
 
     registration.Execute(fixed_float32, moving_float32)
     if verbose > 0:
-        print('Registration finished')
+        print('\033[KRegistration finished')
 
     final_tf = SItk.Transform(optimized_tf)
     final_tf.AddTransform(initial_tf)
@@ -559,7 +559,7 @@ def itkdemons(
 
         deformation_field = demons.Execute(fixed_float32, moving_float32)
         if verbose > 0:
-            print('Registration finished')
+            print('\033[KRegistration finished')
 
         if name is not None and path is not None:
             SItk.WriteImage(deformation_field, os.path.join(path, deformation_name))
