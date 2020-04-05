@@ -11,11 +11,11 @@ def print_current(reg_method, tf):
     :param tf:
     :return:
     """
-    print('\t  MI (%d): %f\n\t  %s: [%s]' % (
+    print('\033[KMI ({:d}): {:5.3f} - {:}: [{:}]'.format(
         reg_method.GetOptimizerIteration(),
         reg_method.GetMetricValue(),
         tf.GetName(),
-        ', '.join(['%s' % p for p in tf.GetParameters()])))
+        ', '.join(['%s' % p for p in tf.GetParameters()])), end='\r')
 
 
 def itkresample(
@@ -60,7 +60,7 @@ def itkresample(
         transform = SItk.Transform(fixed.GetDimension(), SItk.sitkIdentity)
 
     if verbose > 1:
-        print('\t  Image: ' + os.path.join(path, name + '.nii.gz'))
+        print('-> Image: ' + os.path.join(path, name + '.nii.gz'))
 
     if path is None or name is None or find_file(name + '.nii.gz', path) is None:
         interp_alg = interpolation if not isinstance(interpolation, str)\
@@ -140,7 +140,7 @@ def itkn4(
         image = SItk.GetImageFromArray(image)
 
     if verbose > 1:
-        print('\t  Image: ' + os.path.join(path, name + '_corrected.nii.gz'))
+        print('-> Image: ' + os.path.join(path, name + '_corrected.nii.gz'))
     if path is None or name is None or find_file(name + '_corrected.nii.gz', path) is None:
         if mask is not None:
             if isinstance(mask, str):
@@ -192,7 +192,7 @@ def itkhist_match(
         moving = SItk.GetImageFromArray(moving)
 
     if verbose > 1:
-        print('\t  Image: ' + os.path.join(path, name + '_corrected_matched.nii.gz'))
+        print('-> Image: ' + os.path.join(path, name + '_corrected_matched.nii.gz'))
     if path is None or name is None or find_file(name + '_corrected_matched.nii.gz', path) is None:
         matched = SItk.HistogramMatching(
             SItk.Cast(moving, fixed.GetPixelID()), fixed,
@@ -226,7 +226,7 @@ def itksmoothing(image, path=None, name=None, sigma=0.5, sufix='_smoothed_subtra
     gauss_filter.SetVariance(sigma * sigma)
 
     if verbose > 1:
-        print('\t  Image: ' + os.path.join(path, name + sufix))
+        print('-> Image: ' + os.path.join(path, name + sufix))
     if path is None or name is None or find_file(name + sufix, path) is None:
         smoothed = gauss_filter.Execute(image)
         SItk.WriteImage(smoothed, os.path.join(path, name + sufix))
@@ -308,8 +308,8 @@ def itkrigid(
 
     # Setup for the multi-resolution framework.
     smoothing_sigmas = range(levels - 1, -1, -1)
-    if verbose > 1
-        print('\tSigmas {:}'.format(smoothing_sigmas))
+    if verbose > 1:
+        print('> Sigmas {:}'.format(smoothing_sigmas))
     shrink_factor = [2**i for i in smoothing_sigmas]
     registration.SetShrinkFactorsPerLevel(shrinkFactors=shrink_factor)
     registration.SetSmoothingSigmasPerLevel(smoothingSigmas=smoothing_sigmas)
@@ -317,10 +317,10 @@ def itkrigid(
 
     # Connect all of the observers so that we can perform plotting during registration.
     if verbose > 0:
-        print('\tRigid initial registration')
+        print('Rigid initial registration')
         registration.AddCommand(
             SItk.sitkMultiResolutionIterationEvent,
-            lambda: print('\t > %s (%s) level %d' % (
+            lambda: print('> {:} ({:}) level {:d}'.format(
                 registration.GetName(),
                 name,
                 registration.GetCurrentLevel()
@@ -422,10 +422,10 @@ def itkaffine(
     # Optimizer settings.
     registration.RemoveAllCommands()
     if verbose > 0:
-        print('\tAffine registration')
+        print('Affine registration')
         registration.AddCommand(
             SItk.sitkMultiResolutionIterationEvent,
-            lambda: print('\t > %s (%s) level %d' % (
+            lambda: print('> {:} ({:}) level {:d}'.format(
                 registration.GetName(),
                 name,
                 registration.GetCurrentLevel()
@@ -470,7 +470,7 @@ def itksubtraction(fixed, moving, path=None, name=None, verbose=1):
         moving = SItk.GetImageFromArray(moving)
 
     if verbose > 1:
-        print('\t  Image: ' + os.path.join(path, name + '_subtraction.nii.gz'))
+        print('-> Image: ' + os.path.join(path, name + '_subtraction.nii.gz'))
 
     if path is None or name is None or find_file(name + '_subtraction.nii.gz', path) is None:
         sub = SItk.Subtract(
@@ -535,7 +535,7 @@ def itkdemons(
         deformation_name = '/null'
 
     if verbose > 1:
-        print('\t  Deformation: ' + os.path.join(path, deformation_name))
+        print('-> Deformation: ' + os.path.join(path, deformation_name))
 
     if path is None or name is None or find_file(deformation_name, path) is None:
         demons = SItk.DemonsRegistrationFilter()
@@ -545,7 +545,7 @@ def itkdemons(
         if verbose > 1:
             demons.AddCommand(
                 SItk.sitkIterationEvent,
-                lambda: print('\t  Demons %d: %f' % (
+                lambda: print('\033[K> Demons %d: %f' % (
                     demons.GetElapsedIterations(), demons.GetMetric()
                 ))
             )
