@@ -291,6 +291,8 @@ def itkrigid(
     )
 
     ''' Registration parameters '''
+    if verbose > 0:
+        print('Rigid initial registration')
     registration = SItk.ImageRegistrationMethod()
 
     # Similarity metric settings.
@@ -320,7 +322,6 @@ def itkrigid(
 
     # Connect all of the observers so that we can perform plotting during registration.
     if verbose > 0:
-        print('Rigid initial registration')
         registration.AddCommand(
             SItk.sitkMultiResolutionIterationEvent,
             lambda: print('\033[K> {:} ({:}) level {:d}'.format(
@@ -391,6 +392,8 @@ def itkaffine(
     if initial_tf is None:
         initial_tf = itkrigid(fixed, moving, name, verbose=verbose)
 
+    if verbose > 0:
+        print('Affine registration')
     fixed_float32 = SItk.Cast(fixed, cast)
     moving_float32 = SItk.Cast(moving, cast)
     optimized_tf = SItk.AffineTransform(3)
@@ -427,7 +430,6 @@ def itkaffine(
     # Optimizer settings.
     registration.RemoveAllCommands()
     if verbose > 0:
-        print('Affine registration')
         registration.AddCommand(
             SItk.sitkMultiResolutionIterationEvent,
             lambda: print('\033[K> {:} ({:}) level {:d}'.format(
