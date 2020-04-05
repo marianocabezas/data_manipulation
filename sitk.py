@@ -11,11 +11,14 @@ def print_current(reg_method, tf):
     :param tf:
     :return:
     """
-    print('\033[KMI ({:d}): {:5.3f} - {:}: [{:}]'.format(
-        reg_method.GetOptimizerIteration(),
-        reg_method.GetMetricValue(),
-        tf.GetName(),
-        ', '.join(['%s' % p for p in tf.GetParameters()])), end='\r')
+    print(
+        '\033[KMI ({:d}): {:5.3f} - {:}: [{:}]'.format(
+            reg_method.GetOptimizerIteration(),
+            reg_method.GetMetricValue(),
+            tf.GetName(),
+            ', '.join(['{:5.3f}'.format(p) for p in tf.GetParameters()])
+        ), end='\r'
+    )
 
 
 def itkresample(
@@ -335,6 +338,8 @@ def itkrigid(
     # Initial versor optimisation
     registration.SetInitialTransform(initial_tf)
     registration.Execute(fixed_float32, moving_float32)
+    if verbose > 0:
+        print('Registration finished')
 
     return initial_tf
 
@@ -441,6 +446,8 @@ def itkaffine(
     registration.SetInitialTransform(optimized_tf)
 
     registration.Execute(fixed_float32, moving_float32)
+    if verbose > 0:
+        print('Registration finished')
 
     final_tf = SItk.Transform(optimized_tf)
     final_tf.AddTransform(initial_tf)
@@ -551,6 +558,9 @@ def itkdemons(
             )
 
         deformation_field = demons.Execute(fixed_float32, moving_float32)
+        if verbose > 0:
+            print('Registration finished')
+
         if name is not None and path is not None:
             SItk.WriteImage(deformation_field, os.path.join(path, deformation_name))
     else:
