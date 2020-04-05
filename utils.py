@@ -1,6 +1,9 @@
 import time
 import os
 import re
+import sys
+import traceback
+from subprocess import check_call
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 from itertools import product
@@ -113,6 +116,64 @@ def print_message(message):
         (c['c'], time.strftime("%H:%M:%S", time.localtime()), c['nc'], message)
     )
     print(dashes)
+
+
+def run_command(command, message=None, stdout=None, stderr=None):
+    """
+    Function to run and time a shell command using the call function from the
+    subprocess module.
+    :param command: Command that will be run. It has to comply with the call
+    function specifications.
+    :param message: Message to be printed before running the command. This is
+    an optional parameter and by default its
+    None.
+    :param stdout: File where the stdout will be redirected. By default we use
+    the system's stdout.
+    :param stderr: File where the stderr will be redirected. By default we use
+    the system's stderr.
+    :return:
+    """
+    if message is not None:
+        print_message(message)
+
+    time_f(lambda: check_call(command), stdout=stdout, stderr=stderr)
+
+
+def time_f(f, stdout=None, stderr=None):
+    """
+    Function to time another function.
+    :param f: Function to be run. If the function has any parameters, it should
+    be passed using the lambda keyword.
+    :param stdout: File where the stdout will be redirected. By default we use
+    the system's stdout.
+    :param stderr: File where the stderr will be redirected. By default we use
+    the system's stderr.
+    :return: The result of running f.
+    """
+    # Init
+    stdout_copy = sys.stdout
+    if stdout is not None:
+        sys.stdout = stdout
+
+    start_t = time.time()
+    try:
+        ret = f()
+    except Exception as e:
+        ret = None
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        print('{0}: {1}'.format(type(e).__name__, e), file=stderr)
+        traceback.print_tb(exc_traceback, file=stderr)
+    finally:
+        if stdout is not None:
+            sys.stdout = stdout_copy
+
+    print(
+        time.strftime(
+            'Time elapsed = %H hours %M minutes %S seconds',
+            time.gmtime(time.time() - start_t)
+        )
+    )
+    return ret
 
 
 def time_to_string(time_val):
