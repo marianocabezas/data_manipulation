@@ -334,7 +334,7 @@ class BaseModel(nn.Module):
             print(
                     'Training finished in {:} epochs ({:}) '
                     'with minimum loss = {:f} (epoch {:d})'.format(
-                        self.epoch + 1, t_end_s, best_loss_val, best_e
+                        self.epoch + 1, t_end_s, self.best_loss_val, best_e
                     )
             )
 
