@@ -36,6 +36,8 @@ class BaseModel(nn.Module):
         self.dropout = 0
         self.final_dropout = 0
         self.ann_rate = 0
+        self.best_loss_tr = np.inf
+        self.best_loss_val = np.inf
         self.best_state = None
         self.best_opt = None
         self.train_functions = [
@@ -192,9 +194,9 @@ class BaseModel(nn.Module):
                 # We set the network to eval, for the same reason.
                 self.eval()
                 # Training losses.
-                best_loss_tr = self.mini_batch_loop(train_loader)
+                self.best_loss_tr = self.mini_batch_loop(train_loader)
                 # Validation losses.
-                best_loss_val, best_losses, best_acc = self.mini_batch_loop(
+                self.best_loss_val, best_loss, best_acc = self.mini_batch_loop(
                     val_loader, False
                 )
                 # Doing this also helps setting an initial best loss for all
@@ -204,10 +206,14 @@ class BaseModel(nn.Module):
                     # header.
                     # Mid losses check
                     epoch_s = '\033[32mInit     \033[0m'
-                    tr_loss_s = '\033[32m{:7.4f}\033[0m'.format(best_loss_tr)
-                    loss_s = '\033[32m{:7.4f}\033[0m'.format(best_loss_val)
+                    tr_loss_s = '\033[32m{:7.4f}\033[0m'.format(
+                        self.best_loss_tr
+                    )
+                    loss_s = '\033[32m{:7.4f}\033[0m'.format(
+                        self.best_loss_val
+                    )
                     losses_s = [
-                        '\033[36m{:8.4f}\033[0m'.format(l) for l in best_losses
+                        '\033[36m{:8.4f}\033[0m'.format(l) for l in best_loss
                     ]
                     # Acc check
                     acc_s = [
@@ -234,9 +240,7 @@ class BaseModel(nn.Module):
             whites = ' '.join([''] * 12)
             print('{:}Epoch num |  {:}  |'.format(whites, l_hdr))
             print('{:}----------|--{:}--|'.format(whites, l_bars))
-            best_loss_tr = np.inf
-            best_loss_val = np.inf
-            best_losses = [np.inf] * len(self.val_functions)
+            best_loss = [np.inf] * len(self.val_functions)
             best_acc = [-np.inf] * len(self.acc_functions)
 
         for self.epoch in range(epochs):
@@ -245,7 +249,7 @@ class BaseModel(nn.Module):
             self.train()
             # First we train and check if there has been an improvement.
             loss_tr = self.mini_batch_loop(train_loader)
-            improvement_tr = best_loss_tr > loss_tr
+            improvement_tr = self.best_loss_tr > loss_tr
             if improvement_tr:
                 best_loss_tr = loss_tr
                 tr_loss_s = '\033[32m{:7.4f}\033[0m'.format(loss_tr)
@@ -264,12 +268,12 @@ class BaseModel(nn.Module):
             losses_s = [
                 '\033[36m{:8.4f}\033[0m'.format(l) if bl > l
                 else '{:8.4f}'.format(l) for bl, l in zip(
-                    best_losses, mid_losses
+                    best_loss, mid_losses
                 )
             ]
-            best_losses = [
+            best_loss = [
                 l if bl > l else bl for bl, l in zip(
-                    best_losses, mid_losses
+                    best_loss, mid_losses
                 )
             ]
             # Acc check
@@ -288,10 +292,10 @@ class BaseModel(nn.Module):
             # Patience check
             # We check the patience to stop early if the network is not
             # improving. Otherwise we are wasting resources and time.
-            improvement_val = best_loss_val > loss_val
+            improvement_val = self.best_loss_val > loss_val
             loss_s = '{:7.4f}'.format(loss_val)
             if improvement_val:
-                best_loss_val = loss_val
+                self.best_loss_val = loss_val
                 epoch_s = '\033[32mEpoch {:03d}\033[0m'.format(self.epoch)
                 loss_s = '\033[32m{:}\033[0m'.format(loss_s)
                 best_e = self.epoch
