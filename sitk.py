@@ -417,7 +417,7 @@ def itkaffine(
     # Setup for the multi-resolution framework.
     smoothing_sigmas = range(levels - 1, -1, -1)
     if verbose > 1:
-        print('\tSigmas {:}'.format(smoothing_sigmas))
+        print('> Sigmas {:}'.format(smoothing_sigmas))
     shrink_factor = [2**i for i in smoothing_sigmas]
     registration.SetShrinkFactorsPerLevel(shrinkFactors=shrink_factor)
     registration.SetSmoothingSigmasPerLevel(smoothingSigmas=smoothing_sigmas)
