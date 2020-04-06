@@ -140,9 +140,12 @@ class SpatialTransformer(nn.Module):
                     ).to(self.device)
                 ), dim=1
             ).unsqueeze(dim=1)
-            print(affine, affine.shape, norm_mesh.shape)
             aff_mesh = torch.matmul(affine, norm_mesh)
             mesh = aff_mesh.view_as(mesh)
+            print(
+                affine, affine.shape, norm_mesh.shape, aff_mesh.shape, mesh.shape,
+                norm_mesh[:,:,:,0:4], aff_mesh[:,:,:,0:4], mesh[:,:,0:4,0:4,0:4]
+            )
 
         loc = [
             torch.clamp(mesh[:, d, ...] + df[:, d, ...], 0, m)
