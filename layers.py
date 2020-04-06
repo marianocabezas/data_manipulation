@@ -142,7 +142,6 @@ class SpatialTransformer(nn.Module):
             ).unsqueeze(dim=1)
             aff_mesh = torch.matmul(affine, norm_mesh)
             mesh = aff_mesh.view_as(mesh)
-            print(affine)
 
         loc = [
             torch.clamp(mesh[:, d, ...] + df[:, d, ...], 0, m)
