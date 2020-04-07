@@ -220,7 +220,7 @@ class SpatialTransformer(nn.Module):
                     for d, v in map(get_point_value, cube_pts)
                 ]
                 dist, values = zip(*dist_values)
-                self.interp_layer(
+                values = self.interp_layer(
                     torch.stack(dist, dim=1),
                     torch.stack(values, dim=1)
                 )
