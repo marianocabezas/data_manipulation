@@ -153,7 +153,24 @@ class SpatialTransformer(nn.Module):
 
         # interpolate
         interp_vol = None
-        if self.interp_method == 'linear' or self.interp_method == 'learned':
+        if self.interp_method == 'nearest':
+            # clip values
+            roundloc = [
+                torch.clamp(l, 0, m).type(torch.long) for l, m in zip(
+                    [torch.round(l) for l in loc], max_loc
+                )
+            ]
+
+            # get values
+            loc_list = [s * l for s, l in zip(roundloc, d_size)]
+            idx = torch.sum(torch.stack(loc_list, dim=0), dim=0)
+            interp_vol_flat = torch.stack(
+                [torch.take(vol_i, idx_i) for idx_i, vol_i in zip(idx, vol)],
+                dim=0
+            )
+            interp_vol = torch.reshape(interp_vol_flat, final_shape)
+
+        else:
             # clip values
             loc0 = list(map(torch.floor, loc))
             loc0lst = [
@@ -229,23 +246,6 @@ class SpatialTransformer(nn.Module):
                 values = torch.stack(values, dim=1)
 
             interp_vol = torch.sum(values, dim=1)
-
-        elif self.interp_method == 'nearest':
-            # clip values
-            roundloc = [
-                torch.clamp(l, 0, m).type(torch.long) for l, m in zip(
-                    [torch.round(l) for l in loc], max_loc
-                )
-            ]
-
-            # get values
-            loc_list = [s * l for s, l in zip(roundloc, d_size)]
-            idx = torch.sum(torch.stack(loc_list, dim=0), dim=0)
-            interp_vol_flat = torch.stack(
-                [torch.take(vol_i, idx_i) for idx_i, vol_i in zip(idx, vol)],
-                dim=0
-            )
-            interp_vol = torch.reshape(interp_vol_flat, final_shape)
 
         return interp_vol
 
