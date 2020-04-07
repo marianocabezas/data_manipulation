@@ -226,9 +226,9 @@ class SpatialTransformer(nn.Module):
                 )
             else:
                 values = tuple(map(get_point_value, cube_pts))
-                values = torch.stack(values, dim=0)
+                values = torch.stack(values, dim=1)
 
-            interp_vol = torch.sum(values, dim=0)
+            interp_vol = torch.sum(values, dim=1)
 
         elif self.interp_method == 'nearest':
             # clip values
