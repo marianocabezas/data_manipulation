@@ -117,7 +117,6 @@ class SpatialTransformer(nn.Module):
         final_shape = vol.shape[:2] + im_shape
         weights_shape = (vol.shape[0], 1) + im_shape
         nb_dims = len(im_shape)
-        print(vol.shape[2:])
         max_loc = [s - 1 for s in vol.shape[2:]]
 
         if mesh is None:
@@ -143,31 +142,12 @@ class SpatialTransformer(nn.Module):
                 ), dim=1
             ).unsqueeze(dim=1)
             aff_mesh = torch.matmul(affine, norm_mesh)
-            print('Mesh',
-                mesh.view(mesh.shape[:2] + (-1,))[..., 0],
-            )
-            print('Aff',
-                aff_mesh[..., 0]
-            )
             mesh = aff_mesh.view_as(mesh)
-            print('Aff mesh',
-                mesh.view(mesh.shape[:2] + (-1,))[..., 0],
-            )
-            print('DF',
-                df.view(df.shape[:2] + (-1,))[..., 0],
-            )
 
         loc = [
             torch.clamp(mesh[:, d, ...] + df[:, d, ...], 0, m)
             for d, m in zip(range(nb_dims), max_loc)
         ]
-        print(
-            'Loc',
-            loc[0][..., 0, 0, 0],
-            loc[1][..., 0, 0, 0],
-            loc[2][..., 0, 0, 0],
-            max_loc
-        )
 
         # pre ind2sub setup
         d_size = np.cumprod((1,) + vol.shape[-1:2:-1])[::-1]
