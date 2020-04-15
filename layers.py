@@ -182,23 +182,11 @@ class SpatialTransformer(nn.Module):
             loc0lst = [
                 torch.clamp(l, 0, m) for l, m in zip(loc0, max_loc)
             ]
-            print(
-                max_loc,
-                torch.max(loc0lst[0]),
-                torch.max(loc0lst[1]),
-                torch.max(loc0lst[2])
-            )
 
             # get other end of point cube
             loc1 = [
                 torch.clamp(l + 1, 0, m) for l, m in zip(loc0, max_loc)
             ]
-            print(
-                max_loc,
-                torch.max(loc1[0]),
-                torch.max(loc1[1]),
-                torch.max(loc1[2])
-            )
             locs = [
                 [f.type(torch.long) for f in loc0lst],
                 [f.type(torch.long) for f in loc1]
@@ -221,7 +209,7 @@ class SpatialTransformer(nn.Module):
 
             def get_point_value(point):
                 subs = [locs[cd][i] for i, cd in enumerate(point)]
-                loc_list_p = [s * l for s, l in zip(subs, d_size)]
+                loc_list_p = [s.long() * l.long() for s, l in zip(subs, d_size)]
                 idx_p = torch.sum(
                     torch.stack(loc_list_p, dim=0), dim=0
                 ).type(torch.long)
