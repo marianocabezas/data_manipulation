@@ -117,6 +117,7 @@ class SpatialTransformer(nn.Module):
         final_shape = vol.shape[:2] + im_shape
         weights_shape = (vol.shape[0], 1) + im_shape
         nb_dims = len(im_shape)
+        print(vol.shape[2:])
         max_loc = [s - 1 for s in vol.shape[2:]]
 
         if mesh is None:
