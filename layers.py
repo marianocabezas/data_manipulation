@@ -55,7 +55,6 @@ class InterpolationLayer(nn.Module):
         weights = F.softmax(self.w(data), dim=1)
         # And we then interpolate! (we'll leave the reshaping to the
         # transformation layer).
-        print(dist_flat[..., 0], val_flat[..., 0], weights[..., 0])
         return (val_flat * weights).view_as(values)
 
 
@@ -148,12 +147,6 @@ class SpatialTransformer(nn.Module):
             torch.clamp(mesh[:, d, ...] + df[:, d, ...], 0, m)
             for d, m in zip(range(nb_dims), max_loc)
         ]
-        print(
-            max_loc,
-            torch.max(loc[0]),
-            torch.max(loc[1]),
-            torch.max(loc[2])
-        )
 
         # pre ind2sub setup
         d_size = np.cumprod((1,) + vol.shape[-1:2:-1])[::-1]
