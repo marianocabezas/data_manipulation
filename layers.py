@@ -149,6 +149,9 @@ class SpatialTransformer(nn.Module):
                 aff_mesh[..., 0]
             )
             mesh = aff_mesh.view_as(mesh)
+            print(
+                mesh.view(mesh.shape[:2] + (-1,))[..., 0],
+            )
 
         loc = [
             torch.clamp(mesh[:, d, ...] + df[:, d, ...], 0, m)
