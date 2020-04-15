@@ -153,7 +153,7 @@ class SpatialTransformer(nn.Module):
                 mesh.view(mesh.shape[:2] + (-1,))[..., 0],
             )
             print('DF',
-                mesh.view(df.shape[:2] + (-1,))[..., 0],
+                df.view(df.shape[:2] + (-1,))[..., 0],
             )
 
         loc = [
