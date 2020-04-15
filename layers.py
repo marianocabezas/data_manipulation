@@ -148,6 +148,12 @@ class SpatialTransformer(nn.Module):
             torch.clamp(mesh[:, d, ...] + df[:, d, ...], 0, m)
             for d, m in zip(range(nb_dims), max_loc)
         ]
+        print(
+            max_loc,
+            torch.max(loc[0]),
+            torch.max(loc[1]),
+            torch.max(loc[2])
+        )
 
         # pre ind2sub setup
         d_size = np.cumprod((1,) + vol.shape[-1:2:-1])[::-1]
@@ -176,11 +182,23 @@ class SpatialTransformer(nn.Module):
             loc0lst = [
                 torch.clamp(l, 0, m) for l, m in zip(loc0, max_loc)
             ]
+            print(
+                max_loc,
+                torch.max(loc0lst[0]),
+                torch.max(loc0lst[1]),
+                torch.max(loc0lst[2])
+            )
 
             # get other end of point cube
             loc1 = [
                 torch.clamp(l + 1, 0, m) for l, m in zip(loc0, max_loc)
             ]
+            print(
+                max_loc,
+                torch.max(loc1[0]),
+                torch.max(loc1[1]),
+                torch.max(loc1[2])
+            )
             locs = [
                 [f.type(torch.long) for f in loc0lst],
                 [f.type(torch.long) for f in loc1]
