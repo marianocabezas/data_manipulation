@@ -164,7 +164,8 @@ class SpatialTransformer(nn.Module):
             'Loc',
             loc[0][..., 0, 0, 0],
             loc[1][..., 0, 0, 0],
-            loc[2][..., 0, 0, 0]
+            loc[2][..., 0, 0, 0],
+            max_loc
         )
 
         # pre ind2sub setup
