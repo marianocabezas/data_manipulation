@@ -226,6 +226,8 @@ class SpatialTransformer(nn.Module):
                     torch.stack(loc_list_p, dim=0), dim=0
                 ).type(torch.long)
 
+                print(torch.max(idx_p), d_size)
+
                 vol_val_flat = torch.stack(
                     [torch.stack(
                         [torch.take(vol_ij, idx_i) for vol_ij in vol_i],
