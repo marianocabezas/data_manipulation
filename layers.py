@@ -142,15 +142,18 @@ class SpatialTransformer(nn.Module):
                 ), dim=1
             ).unsqueeze(dim=1)
             aff_mesh = torch.matmul(affine, norm_mesh)
-            print(
+            print('Mesh',
                 mesh.view(mesh.shape[:2] + (-1,))[..., 0],
             )
-            print(
+            print('Aff',
                 aff_mesh[..., 0]
             )
             mesh = aff_mesh.view_as(mesh)
-            print(
+            print('Aff mesh',
                 mesh.view(mesh.shape[:2] + (-1,))[..., 0],
+            )
+            print('DF',
+                mesh.view(df.shape[:2] + (-1,))[..., 0],
             )
 
         loc = [
@@ -158,6 +161,7 @@ class SpatialTransformer(nn.Module):
             for d, m in zip(range(nb_dims), max_loc)
         ]
         print(
+            'Loc',
             loc[0][..., 0, 0, 0],
             loc[1][..., 0, 0, 0],
             loc[2][..., 0, 0, 0]
