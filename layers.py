@@ -248,6 +248,7 @@ class SpatialTransformer(nn.Module):
 
             interp_vol = torch.sum(values, dim=1)
 
+        print(interp_vol[..., 0:5, 0:5, 0:5])
         return interp_vol
 
 
