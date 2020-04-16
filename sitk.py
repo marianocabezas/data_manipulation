@@ -119,15 +119,20 @@ def itkresample(
         interp_alg = interpolation if not isinstance(interpolation, str)\
             else interpolation_dict[interpolation]
         if transform is None:
+            new_spacing = fixed.GetSpacing()
             resample = SItk.ResampleImageFilter()
             resample.SetInterpolator(interp_alg)
             resample.SetOutputDirection(moving.GetDirection())
-            resample.SetOutputOrigin(fixed.GetOrigin())
-            resample.SetOutputSpacing(fixed.GetSpacing())
-            resample.SetSize(fixed.GetSize())
+            resample.SetOutputOrigin(moving.GetOrigin())
+            resample.SetOutputSpacing(new_spacing)
+            orig_size = np.array(moving.GetSize(), dtype=np.int)
+            orig_spacing = moving.GetSpacing()
+            new_size = orig_size * (orig_spacing / new_spacing)
+            # Image dimensions are in integers
+            new_size = np.floor(new_size).astype(np.int)
+            resample.SetSize(new_size)
 
             resampled = resample.Execute(moving)
-
         else:
             resampled = SItk.Resample(
                 moving, fixed, transform, interp_alg, default_value
