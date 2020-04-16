@@ -21,57 +21,6 @@ def print_current(reg_method, tf):
     )
 
 
-def itkresampleimage(
-        image,
-        spacing,
-        path=None,
-        name=None,
-        default_value=0.0,
-        interpolation=SItk.sitkBSpline,
-        verbose=0
-):
-    """
-
-    :param fixed:
-    :param moving:
-    :param transform:
-    :param path:
-    :param name:
-    :param default_value:
-    :param interpolation:
-    :param verbose:
-    :return:
-    """
-
-    interpolation_dict = {
-        'linear': SItk.sitkLinear,
-        'bspline': SItk.sitkBSpline,
-        'nn': SItk.sitkNearestNeighbor,
-    }
-
-    # Init
-    if isinstance(image, str):
-        image = SItk.ReadImage(image)
-    elif isinstance(image, np.ndarray):
-        image = SItk.GetImageFromArray(image)
-    transform = SItk.Transform(image.GetDimension(), SItk.sitkIdentity)
-
-    if verbose > 1:
-        print('-> Image: ' + os.path.join(path, name + '.nii.gz'))
-
-    if path is None or name is None or find_file(name + '.nii.gz', path) is None:
-        interp_alg = interpolation if not isinstance(interpolation, str)\
-            else interpolation_dict[interpolation]
-        resampled = SItk.Resample(moving, fixed, transform, interp_alg, default_value)
-
-        if path is not None and name is not None:
-            SItk.WriteImage(resampled, os.path.join(path, name + '.nii.gz'))
-    else:
-        resampled = SItk.ReadImage(os.path.join(path, name + '.nii.gz'))
-
-    return SItk.GetArrayFromImage(resampled)
-
-
 def itkresample(
         fixed,
         moving,
