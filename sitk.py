@@ -124,6 +124,7 @@ def itkresample(
             resample.SetOutputDirection(moving.GetDirection())
             resample.SetOutputOrigin(moving.GetOrigin())
             resample.SetOutputSpacing(fixed.GetSpacing())
+            resample.SetSize(moving.GetSize())
 
             resampled = resample.Execute(moving)
 
