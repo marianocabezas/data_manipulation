@@ -251,7 +251,7 @@ class BaseModel(nn.Module):
             loss_tr = self.mini_batch_loop(train_loader)
             improvement_tr = self.best_loss_tr > loss_tr
             if improvement_tr:
-                best_loss_tr = loss_tr
+                self.best_loss_tr = loss_tr
                 tr_loss_s = '\033[32m{:7.4f}\033[0m'.format(loss_tr)
             else:
                 tr_loss_s = '{:7.4f}'.format(loss_tr)
