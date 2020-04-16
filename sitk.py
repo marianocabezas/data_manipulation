@@ -119,7 +119,7 @@ def itkresample(
         interp_alg = interpolation if not isinstance(interpolation, str)\
             else interpolation_dict[interpolation]
         if transform is None:
-            new_spacing = fixed.GetSpacing()
+            new_spacing = np.array(fixed.GetSpacing())
             resample = SItk.ResampleImageFilter()
             resample.SetInterpolator(interp_alg)
             resample.SetOutputDirection(moving.GetDirection())
