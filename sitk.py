@@ -21,6 +21,57 @@ def print_current(reg_method, tf):
     )
 
 
+def itkresampleimage(
+        image,
+        spacing,
+        path=None,
+        name=None,
+        default_value=0.0,
+        interpolation=SItk.sitkBSpline,
+        verbose=0
+):
+    """
+
+    :param fixed:
+    :param moving:
+    :param transform:
+    :param path:
+    :param name:
+    :param default_value:
+    :param interpolation:
+    :param verbose:
+    :return:
+    """
+
+    interpolation_dict = {
+        'linear': SItk.sitkLinear,
+        'bspline': SItk.sitkBSpline,
+        'nn': SItk.sitkNearestNeighbor,
+    }
+
+    # Init
+    if isinstance(image, str):
+        image = SItk.ReadImage(image)
+    elif isinstance(image, np.ndarray):
+        image = SItk.GetImageFromArray(image)
+    transform = SItk.Transform(image.GetDimension(), SItk.sitkIdentity)
+
+    if verbose > 1:
+        print('-> Image: ' + os.path.join(path, name + '.nii.gz'))
+
+    if path is None or name is None or find_file(name + '.nii.gz', path) is None:
+        interp_alg = interpolation if not isinstance(interpolation, str)\
+            else interpolation_dict[interpolation]
+        resampled = SItk.Resample(moving, fixed, transform, interp_alg, default_value)
+
+        if path is not None and name is not None:
+            SItk.WriteImage(resampled, os.path.join(path, name + '.nii.gz'))
+    else:
+        resampled = SItk.ReadImage(os.path.join(path, name + '.nii.gz'))
+
+    return SItk.GetArrayFromImage(resampled)
+
+
 def itkresample(
         fixed,
         moving,
@@ -59,22 +110,40 @@ def itkresample(
         moving = SItk.ReadImage(moving)
     elif isinstance(moving, np.ndarray):
         moving = SItk.GetImageFromArray(moving)
-    if transform is None:
-        transform = SItk.Transform(fixed.GetDimension(), SItk.sitkIdentity)
 
     if verbose > 1:
         print('-> Image: ' + os.path.join(path, name + '.nii.gz'))
 
-    if path is None or name is None or find_file(name + '.nii.gz', path) is None:
+    file = find_file(name + '.nii.gz', path)
+    if path is None or name is None or file is None:
         interp_alg = interpolation if not isinstance(interpolation, str)\
             else interpolation_dict[interpolation]
+        if transform is None:
+            new_spacing = fixed.GetSpacing()
+            resample = SItk.ResampleImageFilter()
+            resample.SetInterpolator(interp_alg)
+            resample.SetOutputDirection(moving.GetDirection())
+            resample.SetOutputOrigin(moving.GetOrigin())
+            resample.SetOutputSpacing(new_spacing)
+            orig_size = np.array(moving.GetSize(), dtype=np.int)
+            orig_spacing = moving.GetSpacing()
+            new_size = orig_size * (orig_spacing / new_spacing)
+            # Image dimensions are in integers
+            new_size = np.ceil(new_size).astype(np.int)
+            new_size = [int(s) for s in new_size]
+            resample.SetSize(new_size)
 
-        resampled = SItk.Resample(moving, fixed, transform, interp_alg, default_value)
+            resampled = resample.Execute(moving)
+
+        else:
+            resampled = SItk.Resample(
+                moving, fixed, transform, interp_alg, default_value
+            )
 
         if path is not None and name is not None:
             SItk.WriteImage(resampled, os.path.join(path, name + '.nii.gz'))
     else:
-        resampled = SItk.ReadImage(os.path.join(path, name + '.nii.gz'))
+        resampled = SItk.ReadImage(file)
 
     return SItk.GetArrayFromImage(resampled)
 
