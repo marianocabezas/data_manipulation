@@ -130,6 +130,7 @@ def itkresample(
             new_size = orig_size * (orig_spacing / new_spacing)
             # Image dimensions are in integers
             new_size = np.floor(new_size).astype(np.int)
+            new_size = [int(s) for s in new_size]
             resample.SetSize(new_size)
 
             resampled = resample.Execute(moving)
