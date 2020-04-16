@@ -122,9 +122,9 @@ def itkresample(
             resample = SItk.ResampleImageFilter()
             resample.SetInterpolator(interp_alg)
             resample.SetOutputDirection(moving.GetDirection())
-            resample.SetOutputOrigin(moving.GetOrigin())
+            resample.SetOutputOrigin(fixed.GetOrigin())
             resample.SetOutputSpacing(fixed.GetSpacing())
-            resample.SetSize(moving.GetSize())
+            resample.SetSize(fixed.GetSize())
 
             resampled = resample.Execute(moving)
 
