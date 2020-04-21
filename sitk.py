@@ -67,19 +67,30 @@ def itkresample(
     if path is None or name is None or file is None:
         interp_alg = interpolation if not isinstance(interpolation, str)\
             else interpolation_dict[interpolation]
-        if transform is None:
-            resample = SItk.ResampleImageFilter()
-            resample.SetInterpolator(interp_alg)
-            resample.SetOutputDirection(fixed.GetDirection())
-            resample.SetOutputOrigin(fixed.GetOrigin())
-            resample.SetOutputSpacing(fixed.GetSpacing())
-            resample.SetSize(fixed.GetSize())
+        resample = SItk.ResampleImageFilter()
+        resample.SetInterpolator(interp_alg)
+        resample.SetOutputDirection(fixed.GetDirection())
+        resample.SetOutputOrigin(fixed.GetOrigin())
+        resample.SetOutputSpacing(fixed.GetSpacing())
+        resample.SetSize(fixed.GetSize())
 
-            resampled = resample.Execute(moving)
+        if transform is not None:
+            resample.SetTransform(transform)
+
+        mov_size = moving.GetSize()
+        if len(mov_size) == 4:
+            extractor = SItk.ExtractImageFilter()
+            extractor.SetSize(mov_size)
+
+            images = []
+            for idx in range(mov_size[3]):
+                extractor.SetIndex(idx)
+                image = extractor.Execute(mov_size)
+                images.append(resample.Execute(image))
+
+            resampled = SItk.JoinSeries(images)
         else:
-            resampled = SItk.Resample(
-                moving, fixed, transform, interp_alg, default_value
-            )
+            resampled = resample.Execute(moving)
 
         if path is not None and name is not None:
             SItk.WriteImage(resampled, os.path.join(path, name + '.nii.gz'))
