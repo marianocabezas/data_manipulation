@@ -85,7 +85,7 @@ def itkresample(
             images = []
             for idx in range(mov_size[3]):
                 extractor.SetIndex([0, 0, 0, idx])
-                image = extractor.Execute(mov_size)
+                image = extractor.Execute(moving)
                 images.append(resample.Execute(image))
 
             resampled = SItk.JoinSeries(images)
