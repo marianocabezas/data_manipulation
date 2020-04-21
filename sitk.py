@@ -263,6 +263,8 @@ def itkrigid(
         fixed,
         moving,
         name='',
+        fixed_mask=None,
+        moving_mask=None,
         number_bins=50,
         levels=3,
         steps=50,
@@ -279,6 +281,8 @@ def itkrigid(
     :param fixed:
     :param moving:
     :param name:
+    :param fixed_mask:
+    :param moving_mask:
     :param number_bins:
     :param levels:
     :param steps:
@@ -321,6 +325,20 @@ def itkrigid(
     registration.SetMetricSamplingStrategy(registration.RANDOM)
     registration.SetMetricSamplingPercentage(sampling)
     registration.SetInterpolator(SItk.sitkLinear)
+
+    # Masks
+    if fixed_mask is not None:
+        if isinstance(fixed_mask, str):
+            fixed_mask = SItk.ReadImage(fixed_mask)
+        elif isinstance(fixed_mask, np.ndarray):
+            fixed_mask = SItk.GetImageFromArray(fixed_mask)
+        registration.SetMetricFixedMask(fixed_mask)
+    if moving_mask is not None:
+        if isinstance(moving_mask, str):
+            moving_mask = SItk.ReadImage(moving_mask)
+        elif isinstance(moving_mask, np.ndarray):
+            moving_mask = SItk.GetImageFromArray(moving_mask)
+        registration.SetMetricMovingMask(moving_mask)
 
     # Optimizer settings.
     registration.SetOptimizerAsRegularStepGradientDescent(
@@ -370,6 +388,8 @@ def itkaffine(
         fixed,
         moving,
         name='',
+        fixed_mask=None,
+        moving_mask=None,
         initial_tf=None,
         number_bins=50,
         levels=3,
@@ -387,6 +407,8 @@ def itkaffine(
     :param fixed:
     :param moving:
     :param name:
+    :param fixed_mask:
+    :param moving_mask:
     :param initial_tf:
     :param number_bins:
     :param levels:
@@ -427,6 +449,18 @@ def itkaffine(
     registration.SetMetricSamplingStrategy(registration.RANDOM)
     registration.SetMetricSamplingPercentage(sampling)
     registration.SetInterpolator(SItk.sitkLinear)
+    if fixed_mask is not None:
+        if isinstance(fixed_mask, str):
+            fixed_mask = SItk.ReadImage(fixed_mask)
+        elif isinstance(fixed_mask, np.ndarray):
+            fixed_mask = SItk.GetImageFromArray(fixed_mask)
+        registration.SetMetricFixedMask(fixed_mask)
+    if moving_mask is not None:
+        if isinstance(moving_mask, str):
+            moving_mask = SItk.ReadImage(moving_mask)
+        elif isinstance(moving_mask, np.ndarray):
+            moving_mask = SItk.GetImageFromArray(moving_mask)
+        registration.SetMetricMovingMask(moving_mask)
 
     # Optimizer settings.
     registration.SetOptimizerAsRegularStepGradientDescent(
