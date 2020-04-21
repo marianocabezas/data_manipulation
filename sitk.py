@@ -80,7 +80,7 @@ def itkresample(
         mov_size = moving.GetSize()
         if len(mov_size) == 4:
             extractor = SItk.ExtractImageFilter()
-            extractor.SetSize(fixed.GetSize())
+            extractor.SetSize(mov_size[:-1] + [0])
 
             images = []
             for idx in range(mov_size[3]):
