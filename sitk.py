@@ -84,7 +84,7 @@ def itkresample(
 
             images = []
             for idx in range(mov_size[3]):
-                extractor.SetIndex(idx)
+                extractor.SetIndex([0, 0, 0, idx])
                 image = extractor.Execute(mov_size)
                 images.append(resample.Execute(image))
 
