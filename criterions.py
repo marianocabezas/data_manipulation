@@ -99,3 +99,100 @@ def flip_loss(
         final_loss = loss_seg + loss_uncertainty
 
     return final_loss
+
+
+def lesion_size_loss(pred, target):
+    """
+    Loss function that compares the number of mask voxels in two masks
+    before and after deformation/registration.
+    :param pred: Predicted mask (after moving).
+    :param target: Reference mask (the mask before moving).
+    :return: The L2 norm of the voxel difference per patch.
+    """
+    # Init
+    dims = pred.shape
+    reduce_dims = tuple(range(1, len(dims)))
+    mask = target.type_as(pred).to(pred.device)
+
+    # Number of voxels in the mask for each patch.
+    n_mov_voxels = torch.sum(pred, dim=reduce_dims)
+    n_voxels = torch.sum(mask, dim=reduce_dims)
+    return F.mse_loss(n_mov_voxels, n_voxels)
+
+
+def lesion_ppv(pred, target):
+    """
+    Loss function that computes the positive predictive value between two
+    masks.
+    :param pred: Predicted mask.
+    :param target: Ground truth values.
+    :return:
+    """
+    # Init
+    dims = pred.shape
+    reduce_dims = tuple(range(1, len(dims)))
+    mask = target.type_as(pred).to(pred.device)
+
+    tp = torch.sum(pred * mask, dim=reduce_dims)
+    positive = torch.sum(pred, dim=reduce_dims)
+    return torch.mean(1. - (tp / positive))
+
+
+"""
+> Regression losses
+"""
+
+
+def normalise_var(var):
+    red_dim = tuple(range(2, len(var.shape)))
+    mean = torch.mean(var.detach(), dim=red_dim, keepdim=True)
+    std = torch.std(var.detach(), dim=red_dim, keepdim=True)
+    if (std < 1e-5).any():
+        norm = (var - mean)
+    else:
+        norm = (var - mean) / std
+
+    return norm
+
+
+def normalised_xcor(var_x, var_y):
+    """
+        Function that computes the normalised cross correlation between two
+         tensors.
+        :param var_x: First tensor.
+        :param var_y: Second tensor.
+        :return: A tensor with the normalised cross correlation
+    """
+    # Init
+    var_y = var_y.to(var_x.device)
+
+    # Computation
+    var_x_norm = normalise_var(var_x)
+    var_y_norm = normalise_var(var_y)
+
+    xcor = [
+        F.conv1d(
+            torch.unsqueeze(x_i, dim=0).view(1, len(x_i), -1),
+            torch.unsqueeze(y_i, dim=0).view(1, len(y_i), -1)
+        )
+        for x_i, y_i in zip(var_x_norm, var_y_norm)
+    ]
+
+    xcor = torch.mean(torch.abs(torch.cat(xcor))) / var_x.numel()
+
+    if torch.isnan(xcor):
+        xcor = torch.tensor(1., device=xcor.device)
+
+    return xcor
+
+
+def normalised_xcor_loss(var_x, var_y):
+    """
+        Loss function based on the normalised cross correlation between two
+         tensors. Since we are using gradient descent, the final value is
+         1 - the normalised cross correlation.
+        :param var_x: First tensor.
+        :param var_y: Second tensor.
+        :return: A tensor with the loss
+    """
+    return 1. - normalised_xcor(var_x, var_y)
