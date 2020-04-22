@@ -149,7 +149,7 @@ def normalise_var(var):
     mean = torch.mean(var.detach(), dim=red_dim, keepdim=True)
     std = torch.std(var.detach(), dim=red_dim, keepdim=True)
     if (std < 1e-5).any():
-        norm = (var - mean)
+        norm = (var[std > 1e-5] - mean[std > 1e-5]) / std[std > 1e-5]
     else:
         norm = (var - mean) / std
 
