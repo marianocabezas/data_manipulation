@@ -139,7 +139,8 @@ def lesion_ppv(pred, target):
     valid = positive > 1e-5
     ppv = tp[valid] / positive[valid]
     tensor_1 = torch.tensor(1., device=ppv.device)
-    ppv_loss = tensor_1 - ppv if len(ppv) > 0 else tensor_1
+    tensor_0 = torch.tensor(0., device=ppv.device)
+    ppv_loss = tensor_1 - ppv if len(ppv) > 0 else tensor_0
     return torch.mean(ppv_loss)
 
 
