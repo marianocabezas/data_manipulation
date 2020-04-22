@@ -117,6 +117,7 @@ def lesion_size_loss(pred, target):
     # Number of voxels in the mask for each patch.
     n_mov_voxels = torch.sum(pred, dim=reduce_dims)
     n_voxels = torch.sum(mask, dim=reduce_dims)
+    print(n_mov_voxels, n_voxels)
     return F.mse_loss(n_mov_voxels, n_voxels)
 
 
