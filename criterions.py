@@ -137,7 +137,7 @@ def lesion_ppv(pred, target):
     tp = torch.sum(pred * mask, dim=reduce_dims)
     positive = torch.sum(mask, dim=reduce_dims)
     valid = positive > 1e-5
-    return 1. - tp[valid] / positive[valid]
+    return torch.mean(1. - tp[valid] / positive[valid])
 
 
 """
