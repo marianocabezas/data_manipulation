@@ -184,8 +184,6 @@ def normalised_xcor(var_x, var_y):
     if torch.isnan(xcor):
         xcor = torch.tensor(1., device=xcor.device)
 
-    print(xcor)
-
     return xcor
 
 
