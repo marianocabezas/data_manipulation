@@ -117,7 +117,7 @@ def lesion_size_loss(pred, target):
     # Number of voxels in the mask for each patch.
     n_mov_voxels = torch.sum(pred, dim=reduce_dims)
     n_voxels = torch.sum(mask, dim=reduce_dims)
-    print(torch.sum(n_mov_voxels), torch.sum(n_voxels))
+    print('size', torch.sum(n_mov_voxels), torch.sum(n_voxels))
     return F.mse_loss(n_mov_voxels, n_voxels)
 
 
@@ -137,6 +137,7 @@ def lesion_ppv(pred, target):
     tp = torch.sum(pred * mask, dim=reduce_dims)
     positive = torch.sum(mask, dim=reduce_dims)
     valid = positive > 1e-5
+    print('ppv', tp[valid], positive[valid])
     return torch.mean(1. - tp[valid] / positive[valid])
 
 
