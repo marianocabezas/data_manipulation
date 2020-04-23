@@ -117,7 +117,12 @@ def lesion_size_loss(pred, target):
     # Number of voxels in the mask for each patch.
     n_mov_voxels = torch.sum(pred, dim=reduce_dims)
     n_voxels = torch.sum(mask, dim=reduce_dims)
-    return F.mse_loss(n_mov_voxels, n_voxels)
+    valid = n_voxels > 1e-5
+    ratio = n_mov_voxels[valid] / n_voxels[valid]
+    tensor_1 = torch.tensor(1., device=ratio.device)
+    tensor_0 = torch.tensor(0., device=ratio.device)
+    ratio_loss = tensor_1 - ratio if len(ratio) > 0 else tensor_0
+    return ratio_loss
 
 
 def lesion_ppv(pred, target):
