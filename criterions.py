@@ -122,7 +122,7 @@ def lesion_size_loss(pred, target):
     tensor_1 = torch.tensor(1., device=ratio.device)
     tensor_0 = torch.tensor(0., device=ratio.device)
     ratio_loss = tensor_1 - ratio if len(ratio) > 0 else tensor_0
-    return ratio_loss
+    return torch.mean(ratio_loss)
 
 
 def lesion_ppv(pred, target):
