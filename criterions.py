@@ -121,7 +121,7 @@ def lesion_size_loss(pred, target):
     ratio = n_mov_voxels[valid] / n_voxels[valid]
     tensor_1 = torch.tensor(1., device=ratio.device)
     tensor_0 = torch.tensor(0., device=ratio.device)
-    ratio_loss = tensor_1 - ratio if len(ratio) > 0 else tensor_0
+    ratio_loss = torch.abs(tensor_1 - ratio) if len(ratio) > 0 else tensor_0
     return torch.mean(ratio_loss)
 
 
