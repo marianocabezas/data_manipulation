@@ -188,7 +188,8 @@ def normalised_xcor(var_x, var_y):
         for x_i, y_i in zip(var_x_norm, var_y_norm)
     ]
 
-    xcor = torch.mean(torch.abs(torch.cat(xcor))) / var_x.numel()
+    n_elem = var_x.numel() / len(var_x)
+    xcor = torch.mean(torch.abs(torch.cat(xcor))) / n_elem
 
     if torch.isnan(xcor):
         xcor = torch.tensor(1., device=xcor.device)
