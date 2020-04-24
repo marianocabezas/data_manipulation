@@ -198,6 +198,17 @@ def time_to_string(time_val):
     return time_s
 
 
+def get_int(string):
+    """
+    Function to get the int number contained in a string. If there are more
+    than one int number (or there is a floating point number), this function
+    will concatenate all digits and return an int, anyways.
+    :param string: String that contains an int number
+    :return: int number
+    """
+    return int(''.join(filter(str.isdigit, string)))
+
+
 """
 Data related functions
 """
