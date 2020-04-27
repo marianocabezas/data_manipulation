@@ -607,9 +607,12 @@ class ResConv3dBlock(BaseConv3dBlock):
 
         self.conv = self.conv(filters_in, filters_out)
 
-        self.res = conv(
-            filters_in, filters_out, 1,
-        )
+        if filters_in != filters_out:
+            self.res = conv(
+                filters_in, filters_out, 1,
+            )
+        else:
+            self.res = None
 
         self.end_seq = nn.Sequential(
             activation(),
@@ -617,8 +620,8 @@ class ResConv3dBlock(BaseConv3dBlock):
         )
 
     def forward(self, inputs):
-        res = self.conv(inputs) + self.res(inputs)
-        return self.end_seq(res)
+        res = inputs if self.res is None else self.res(inputs)
+        return self.end_seq(self.conv(inputs) + res)
 
 
 class Gated3dBlock(BaseConv3dBlock):
