@@ -468,7 +468,7 @@ class Autoencoder(BaseModel):
         # output for each level.
         self.down = nn.ModuleList([
             block_partial(f_in, f_out) for f_in, f_out in zip(
-                [n_inputs] + conv_filters[:-2], conv_filters[:-1]
+                conv_in, conv_out
             )
         ])
 
@@ -480,12 +480,9 @@ class Autoencoder(BaseModel):
         # need to account for the skip connections, that's why we sum the
         # channels for both outputs. That basically means that we are
         # concatenating with the skip connection, and not suming.
-        down_out = conv_filters[-2::-1]
-        up_out = conv_filters[:0:-1]
-        deconv_in = map(sum, zip(down_out, up_out))
         self.up = nn.ModuleList([
             block_partial(f_in, f_out, inv=True) for f_in, f_out in zip(
-                deconv_in, down_out
+                deconv_in, deconv_out
             )
         ])
 
