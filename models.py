@@ -459,6 +459,10 @@ class Autoencoder(BaseModel):
         self.device = device
         self.dropout = dropout
 
+        conv_in, conv_out, deconv_in, deconv_out = block.compute_filters(
+            n_inputs, conv_filters
+        )
+
         # Down path
         # We'll use the partial and fill it with the channels for input and
         # output for each level.
@@ -526,19 +530,41 @@ class Autoencoder(BaseModel):
         return input_s
 
 
-class Conv3dBlock(BaseModel):
+class BaseConv3dBlock(BaseModel):
+    def __init__(self, filters_in, filters_out, kernel, inv):
+        super().__init__()
+        if not inv:
+            self.conv = partial(
+                nn.Conv3d, kernel_size=kernel, padding=kernel // 2
+            )
+        else:
+            self.conv = partial(
+                nn.ConvTranspose3d, kernel_size=kernel, padding=kernel // 2
+            )
+
+    def forward(self, inputs):
+        return self.conv(inputs)
+
+    @staticmethod
+    def compute_filters(n_inputs, conv_filters):
+        conv_in = [n_inputs] + conv_filters[:-2]
+        conv_out = conv_filters[:-1]
+        down_out = conv_filters[-2::-1]
+        up_out = conv_filters[:0:-1]
+        deconv_in = map(sum, zip(down_out, up_out))
+        deconv_out = down_out
+        return conv_in, conv_out, deconv_in, deconv_out
+
+
+class Conv3dBlock(BaseConv3dBlock):
     def __init__(
             self, filters_in, filters_out,
             kernel=3, norm=None, activation=None, inv=False
     ):
-        super().__init__()
-        if not inv:
-            conv = nn.Conv3d
-        else:
-            conv = nn.ConvTranspose3d
+        super().__init__(filters_in, filters_out, kernel, inv)
 
         self.block = nn.Sequential(
-            conv(filters_in, filters_out, kernel, padding=kernel // 2),
+            self.conv(filters_in, filters_out),
             activation(),
             norm(filters_out)
         )
@@ -547,22 +573,18 @@ class Conv3dBlock(BaseModel):
         return self.block(inputs)
 
 
-class DoubleConv3dBlock(BaseModel):
+class DoubleConv3dBlock(BaseConv3dBlock):
     def __init__(
             self, filters_in, filters_out,
             kernel=3, norm=None, activation=None, inv=False
     ):
-        super().__init__()
-        if not inv:
-            conv = nn.Conv3d
-        else:
-            conv = nn.ConvTranspose3d
+        super().__init__(filters_in, filters_out, kernel, inv)
 
         self.block = nn.Sequential(
-            conv(filters_in, filters_out, kernel, padding=kernel // 2),
+            self.conv(filters_in, filters_out),
             activation(),
             norm(filters_out),
-            conv(filters_out, filters_out, kernel, padding=kernel // 2),
+            self.conv(filters_out, filters_out),
             activation(),
             norm(filters_out)
         )
@@ -571,21 +593,18 @@ class DoubleConv3dBlock(BaseModel):
         return self.block(inputs)
 
 
-class ResConv3dBlock(BaseModel):
+class ResConv3dBlock(BaseConv3dBlock):
     def __init__(
             self, filters_in, filters_out,
             kernel=3, norm=None, activation=None, inv=False
     ):
-        super().__init__()
+        super().__init__(filters_in, filters_out, kernel, inv)
         if not inv:
             conv = nn.Conv3d
         else:
             conv = nn.ConvTranspose3d
 
-        self.conv = conv(
-            filters_in, filters_out, kernel,
-            padding=kernel // 2
-        )
+        self.conv = self.conv(filters_in, filters_out)
 
         self.res = conv(
             filters_in, filters_out, 1,
@@ -601,27 +620,36 @@ class ResConv3dBlock(BaseModel):
         return self.end_seq(res)
 
 
-class Res3dBlock(BaseModel):
+class Res3dBlock(BaseConv3dBlock):
     def __init__(
             self, filters_in, filters_out,
             kernel=3, norm=None, activation=None, inv=False
     ):
-        super().__init__()
-        if not inv:
-            conv = nn.Conv3d
-        else:
-            conv = nn.ConvTranspose3d
+        super().__init__(filters_in, filters_out, kernel, inv)
 
-        self.conv = conv(
-            filters_in, filters_out, kernel,
-            padding=kernel // 2
-        )
+        self.conv = self.conv(filters_in, filters_out)
 
         self.end_seq = nn.Sequential(
             activation(),
-            norm(filters_out)
+            norm(filters_in + filters_out)
         )
 
     def forward(self, inputs):
-        res = self.conv(inputs) + inputs
+        res = torch.cat((inputs, self.conv(inputs)), dim=1)
         return self.end_seq(res)
+
+    @staticmethod
+    def compute_filters(n_inputs, conv_filters):
+        conv_in = [n_inputs] + conv_filters[:-2]
+        conv_out = [
+            c_in + c_out
+            for c_in, c_out in zip(conv_in, conv_filters[:-1])
+        ]
+        down_out = conv_out[-2::-1]
+        up_out = conv_filters[:0:-1]
+        deconv_in = map(sum, zip(down_out, up_out))
+        deconv_out = [
+            d_in + d_out
+            for d_in, d_out in zip(deconv_in, down_out)
+        ]
+        return conv_in, conv_out, deconv_in, deconv_out
