@@ -619,3 +619,31 @@ class ResConv3dBlock(BaseConv3dBlock):
     def forward(self, inputs):
         res = self.conv(inputs) + self.res(inputs)
         return self.end_seq(res)
+
+
+class Gated3dBlock(BaseConv3dBlock):
+    def __init__(
+            self, filters_in, filters_out,
+            kernel=3, norm=None, activation=None, inv=False
+    ):
+        super().__init__(filters_in, filters_out, kernel, inv)
+        if not inv:
+            conv = nn.Conv3d
+        else:
+            conv = nn.ConvTranspose3d
+
+        self.gated_conv = conv(
+            filters_in, filters_out, 1
+        )
+
+        self.end_seq = nn.Sequential(
+            self.conv(filters_in, filters_out),
+            activation(),
+        )
+        self.norm = norm(filters_out)
+
+    def forward(self, inputs):
+        gate = torch.sigmoid(self.gated_conv(inputs))
+        conv = self.end_seq(inputs)
+
+        return self.norm(conv * gate)
