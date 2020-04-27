@@ -89,17 +89,21 @@ class BaseModel(nn.Module):
 
             # First, we do a forward pass through the network.
             torch.cuda.synchronize()
-            if isinstance(x, list):
+            if isinstance(x, list) or isinstance(x, tuple):
                 x_cuda = tuple(x_i.to(self.device) for x_i in x)
                 pred_labels = self(*x_cuda)
             else:
                 pred_labels = self(x.to(self.device))
+            if isinstance(y, list) or isinstance(y, tuple):
+                y_cuda = tuple(y_i.to(self.device) for y_i in y)
+            else:
+                y_cuda = y.to(self.device)
 
             # After that, we can compute the relevant losses.
             if train:
                 # Training losses (applied to the training data)
                 batch_losses = [
-                    l_f['weight'] * l_f['f'](pred_labels, y)
+                    l_f['weight'] * l_f['f'](pred_labels, y_cuda)
                     for l_f in self.train_functions
                 ]
                 batch_loss = sum(batch_losses)
@@ -110,7 +114,7 @@ class BaseModel(nn.Module):
             else:
                 # Validation losses (applied to the validation data)
                 batch_losses = [
-                    l_f['f'](pred_labels, y)
+                    l_f['f'](pred_labels, y_cuda)
                     for l_f in self.val_functions
                 ]
                 batch_loss = sum([
@@ -119,7 +123,7 @@ class BaseModel(nn.Module):
                 ])
                 mid_losses.append([l.tolist() for l in batch_losses])
                 batch_accs = [
-                    l_f['f'](pred_labels, y)
+                    l_f['f'](pred_labels, y_cuda)
                     for l_f in self.acc_functions
                 ]
                 accs.append([a.tolist() for a in batch_accs])
