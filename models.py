@@ -637,11 +637,13 @@ class Res3dBlock(BaseConv3dBlock):
 
     @staticmethod
     def compute_filters(n_inputs, conv_filters):
-        conv_in = [n_inputs] + conv_filters[:-2]
+        conv_res = [n_inputs] + conv_filters[:-2]
         conv_out = [
             c_in + c_out
-            for c_in, c_out in zip(conv_in, conv_filters[:-1])
+            for c_in, c_out in zip(conv_res, conv_filters[:-1])
         ]
+        conv_in = [n_inputs] + conv_out[:-1]
+
         down_out = conv_out[-2::-1]
         up_out = conv_filters[:0:-1]
         deconv_in = map(sum, zip(down_out, up_out))
