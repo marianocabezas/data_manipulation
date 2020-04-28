@@ -3,6 +3,59 @@ from torch.nn import functional as F
 
 
 """
+Tensor functions
+"""
+
+
+def gradient(tensor):
+    """
+        Function to compute the gradient of a multidimensional tensor. We
+         assume that the first two dimensions specify the number of samples and
+         channels.
+        :param tensor: Input tensor
+        :return: The mean gradient tensor
+    """
+
+    # Init
+    tensor_dims = len(tensor.shape)
+    data_dims = tensor_dims - 2
+
+    # Since we want this function to be generic, we need a trick to define
+    # the gradient on each dimension.
+    all_slices = (slice(0, None),) * (tensor_dims - 1)
+    first = slice(0, -2)
+    last = slice(2, None)
+    slices = [
+        (
+            all_slices[:i + 2] + (first,) + all_slices[i + 2:],
+            all_slices[:i + 2] + (last,) + all_slices[i + 2:],
+        )
+        for i in range(data_dims)
+    ]
+
+    # Remember that gradients moved the image 0.5 pixels while also reducing
+    # 1 voxel per dimension. To deal with that we are technically interpolating
+    # the gradient in between these positions. These is the equivalent of
+    # computing the gradient between voxels separated one space. 1D ex:
+    # [a, b, c, d] -> gradient0.5 = [a - b, b - c, c - d]
+    # gradient1 = 0.5 * [(a - b) + (b - c), (b - c) + (c - d)] =
+    # = 0.5 * [a - c, b - d] ~ [a - c, b - d]
+    no_pad = (0, 0)
+    pad = (1, 1)
+    paddings = [
+        no_pad * i + pad + no_pad * (data_dims - i - 1)
+        for i in range(data_dims)[::-1]
+    ]
+
+    gradients = [
+        0.5 * F.pad(tensor[si] - tensor[sf], p)
+        for p, (si, sf) in zip(paddings, slices)
+    ]
+
+    return torch.cat(gradients, dim=1)
+
+
+"""
 Binary losses
 """
 
