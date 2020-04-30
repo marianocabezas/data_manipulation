@@ -140,7 +140,7 @@ def itkn4(
         name=None,
         mask=None,
         max_iters=400,
-        levels=3,
+        levels=1,
         cast=SItk.sitkFloat32,
         verbose=1
 ):
@@ -177,7 +177,8 @@ def itkn4(
         corrector = SItk.N4BiasFieldCorrectionImageFilter()
         corrector.SetMaximumNumberOfIterations([max_iters] * levels)
         corrector.SetConvergenceThreshold = 1e-5
-        corrector.SetSplineOrder = 3
+        corrector.SetNumberOfControlPoints = 6
+        corrector.SetSplineOrder = 4
         output = corrector.Execute(image, mask)
         if name is not None and path is not None:
             SItk.WriteImage(output, os.path.join(path, name + '_corrected.nii.gz'))
