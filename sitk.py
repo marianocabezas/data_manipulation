@@ -168,18 +168,17 @@ def itkn4(
     if path is None or name is None or find_file(name + '_corrected.nii.gz', path) is None:
         if mask is not None:
             if isinstance(mask, str):
-                mask = SItk.Cast(SItk.ReadImage(mask), SItk.sitkUInt8)
+                mask = SItk.ReadImage(mask)
             elif isinstance(mask, np.ndarray):
                 mask = SItk.GetImageFromArray(mask)
         else:
             mask = SItk.OtsuThreshold(image, 0, 1, 200)
+        bin = SItk.BinaryThresholdImageFilter()
+        mask_bin = bin.Execute(mask)
         image = SItk.Cast(image, cast)
         corrector = SItk.N4BiasFieldCorrectionImageFilter()
         corrector.SetMaximumNumberOfIterations([max_iters] * levels)
-        corrector.SetConvergenceThreshold = 1e-5
-        corrector.SetNumberOfControlPoints = 6
-        corrector.SetSplineOrder = 4
-        output = corrector.Execute(image, mask)
+        output = corrector.Execute(image, mask_bin)
         if name is not None and path is not None:
             SItk.WriteImage(output, os.path.join(path, name + '_corrected.nii.gz'))
         return SItk.GetArrayFromImage(output)
