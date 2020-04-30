@@ -176,9 +176,9 @@ def itkn4(
         image = SItk.Cast(image, cast)
         corrector = SItk.N4BiasFieldCorrectionImageFilter()
         corrector.SetMaximumNumberOfIterations([max_iters] * levels)
-        corrector.SetConvergenceThreshold = 1e-4
+        corrector.SetConvergenceThreshold = 1e-5
         corrector.SetNumberOfControlPoints = 6
-        corrector.SetNumberOfHistogramBins = 256
+        corrector.SetNumberOfHistogramBins = 128
         corrector.SetSplineOrder = 3
         output = corrector.Execute(image, mask)
         if name is not None and path is not None:
