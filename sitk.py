@@ -140,7 +140,7 @@ def itkn4(
         name=None,
         mask=None,
         max_iters=400,
-        levels=1,
+        levels=3,
         cast=SItk.sitkFloat32,
         verbose=1
 ):
@@ -165,7 +165,8 @@ def itkn4(
 
     if verbose > 1:
         print('-> Image: ' + os.path.join(path, name + '_corrected.nii.gz'))
-    if path is None or name is None or find_file(name + '_corrected.nii.gz', path) is None:
+    found = find_file(name + '_corrected.nii.gz', path)
+    if path is None or name is None or found is None:
         if mask is not None:
             if isinstance(mask, str):
                 mask = SItk.ReadImage(mask)
@@ -178,7 +179,9 @@ def itkn4(
         corrector.SetMaximumNumberOfIterations([max_iters] * levels)
         output = corrector.Execute(image, mask)
         if name is not None and path is not None:
-            SItk.WriteImage(output, os.path.join(path, name + '_corrected.nii.gz'))
+            SItk.WriteImage(
+                output, os.path.join(path, name + '_corrected.nii.gz')
+            )
         return SItk.GetArrayFromImage(output)
 
 
