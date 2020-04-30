@@ -168,7 +168,7 @@ def itkn4(
     if path is None or name is None or find_file(name + '_corrected.nii.gz', path) is None:
         if mask is not None:
             if isinstance(mask, str):
-                mask = SItk.ReadImage(mask)
+                mask = SItk.Cast(SItk.ReadImage(mask), SItk.sitkUInt8)
             elif isinstance(mask, np.ndarray):
                 mask = SItk.GetImageFromArray(mask)
         else:
