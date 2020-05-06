@@ -88,7 +88,6 @@ class BaseModel(nn.Module):
                 self.optimizer_alg.zero_grad()
 
             # First, we do a forward pass through the network.
-            torch.cuda.synchronize()
             if isinstance(x, list) or isinstance(x, tuple):
                 x_cuda = tuple(x_i.to(self.device) for x_i in x)
                 pred_labels = self(*x_cuda)
@@ -128,7 +127,6 @@ class BaseModel(nn.Module):
                 ]
                 accs.append([a.tolist() for a in batch_accs])
 
-            torch.cuda.synchronize()
             torch.cuda.empty_cache()
 
             # It's important to compute the global loss in both cases.
@@ -622,6 +620,51 @@ class ResConv3dBlock(BaseConv3dBlock):
     def forward(self, inputs):
         res = inputs if self.res is None else self.res(inputs)
         return self.end_seq(self.conv(inputs) + res)
+
+
+class ResNConv3dBlock(BaseConv3dBlock):
+    def __init__(
+            self, filters_in, filters_out, n_conv,
+            kernel=3, norm=None, activation=None, inv=False
+    ):
+        super().__init__(filters_in, filters_out, kernel, inv)
+        if n_conv < 2:
+            n_conv = 2
+        if not inv:
+            conv = nn.Conv3d
+        else:
+            conv = nn.ConvTranspose3d
+
+        self.init = nn.Sequential(
+            self.conv(filters_in, filters_out),
+            activation(),
+            norm(filters_out)
+        )
+
+        if filters_in != filters_out:
+            self.res = nn.Sequential(
+                conv(filters_in, filters_out, 1),
+                activation(),
+                norm(filters_out)
+            )
+        else:
+            self.res = None
+
+        self.seq = nn.ModuleList([
+            nn.Sequential(
+                self.conv(filters_out, filters_out),
+                activation(),
+                norm(filters_out)
+            )
+            for _ in range(n_conv - 1)
+        ])
+
+    def forward(self, inputs):
+        res = inputs if self.res is None else self.res(inputs)
+        res = self.init(inputs) + res
+        for c in self.seq:
+            res = c(res) + res
+        return res
 
 
 class Gated3dBlock(BaseConv3dBlock):
