@@ -154,6 +154,33 @@ def flip_loss(
     return final_loss
 
 
+def uncertainty_loss(
+        pred, target, q, q_factor=0.5, base=F.binary_cross_entropy
+):
+    """
+    Uncertainty loss function based on:
+    Richard McKinley, Michael Rebsamen, Raphael Meier, Mauricio Reyes,
+    Christian Rummel and Roland Wiest. "Few-shot brain segmentation from weakly
+    labeled data with deep heteroscedastic multi-task network".
+    https://arxiv.org/abs/1904.02436
+    :param pred: Predicted values. The shape of the tensor should be related
+     to the base function.
+    :param target: Ground truth values. The shape of the tensor should be
+     related to the base function.
+    :param q: Uncertainty output from the network. The shape of the tensor
+     should be related to the base function.
+    :param q_factor: Factor to normalise the value of q.
+    :param base: Base function for the flip loss.
+    :return: The flip loss given a base loss function
+    """
+    norm_q = q * q_factor
+    flip_0 = (pred >= 0.5).type_as(pred) * (1 - target)
+    flip_1 = (pred < 0.5).type_as(pred) * target
+    z = flip_0 + flip_1
+
+    return base(norm_q, z.detach())
+
+
 def lesion_size_loss(pred, target):
     """
     Loss function that compares the number of mask voxels in two masks
