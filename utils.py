@@ -307,6 +307,22 @@ def save_scatter(
     plt.close()
 
 
+def get_bb(mask):
+    """
+
+    :param mask:
+    :return:
+    """
+    idx = np.where(mask)
+    bb = tuple(
+        slice(min_i, max_i)
+        for min_i, max_i in zip(
+            np.min(idx, axis=-1), np.max(idx, axis=-1)
+        )
+    )
+    return bb
+
+
 def get_mask(mask_name, dilate=0, dtype=np.uint8):
     """
     Function to load a mask image
