@@ -624,7 +624,7 @@ class ResConv3dBlock(BaseConv3dBlock):
 
 class ResNConv3dBlock(BaseConv3dBlock):
     def __init__(
-            self, filters_in, filters_out, n_conv,
+            self, filters_in, filters_out, n_conv=2,
             kernel=3, norm=None, activation=None, inv=False
     ):
         super().__init__(filters_in, filters_out, kernel, inv)
