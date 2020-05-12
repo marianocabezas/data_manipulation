@@ -424,6 +424,7 @@ class Autoencoder(BaseModel):
             norm=None,
             activation=None,
             block=None,
+            gated=False,
             dropout=0,
     ):
         """
@@ -487,6 +488,27 @@ class Autoencoder(BaseModel):
                 deconv_in, deconv_out
             )
         ])
+
+        if gated:
+            self.up_gates = nn.ModuleList([
+                nn.Sequential(
+                    nn.Conv3d(f_in, f_out, 1),
+                    nn.Sigmoid()
+                )
+                for f_in, f_out in zip(conv_in, conv_out)
+            ])
+            self.u_gate = nn.Sequential(
+                nn.Conv3d(conv_filters[-2], conv_filters[-1], 1),
+                nn.Sigmoid()
+            )
+            self.down_gates = nn.ModuleList([
+                nn.Sequential(
+                    nn.Conv3d(f_in, f_out, 1),
+                    nn.Sigmoid()
+                )
+                for f_in, f_out in zip(deconv_in, deconv_out)
+            ])
+            self.gates_out = None
 
     def forward(self, input_s):
         # We need to keep track of the convolutional outputs, for the skip

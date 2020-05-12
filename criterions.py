@@ -88,8 +88,8 @@ def dsc_loss(pred, target, smooth=0.1):
     # DSC = 2 * | pred *union* target | / (| pred | + | target |)
     reduce_dims = tuple(range(1, len(dims)))
     num = (2 * torch.sum(pred * target, dim=reduce_dims))
-    den = torch.sum(pred + target, dim=reduce_dims) + smooth
-    dsc_k = num / den
+    den = torch.sum(pred + target, dim=reduce_dims)
+    dsc_k = num[den > 0] / den[den > 0]
     dsc = 1 - torch.mean(dsc_k)
 
     return torch.clamp(dsc, 0., 1.)
