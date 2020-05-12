@@ -60,7 +60,7 @@ Binary losses
 """
 
 
-def dsc_loss(pred, target, smooth=0.1):
+def dsc_loss(pred, target, smooth=1e-5):
     """
     Loss function based on a single class DSC metric.
     :param pred: Predicted values. This tensor should have the shape:
