@@ -510,7 +510,7 @@ class Autoencoder(BaseModel):
             ])
             self.gates_out = None
 
-    def forward(self, input_s):
+    def forward(self, input_s, keepfeat=False):
         # We need to keep track of the convolutional outputs, for the skip
         # connections.
         down_inputs = []
@@ -526,6 +526,8 @@ class Autoencoder(BaseModel):
 
         self.u.to(self.device)
         input_s = F.dropout3d(self.u(input_s), self.dropout, self.training)
+
+        features = down_inputs + [input_s] if keepfeat else []
 
         for d, i in zip(self.up, down_inputs[::-1]):
             d.to(self.device)
@@ -548,7 +550,9 @@ class Autoencoder(BaseModel):
                     self.training
                 )
 
-        return input_s
+        output = input_s, features if keepfeat else input_s
+
+        return output
 
 
 class BaseConv3dBlock(BaseModel):
