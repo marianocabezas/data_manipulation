@@ -550,7 +550,7 @@ class Autoencoder(BaseModel):
                     self.training
                 )
 
-        output = input_s, features if keepfeat else input_s
+        output = (input_s, features) if keepfeat else input_s
 
         return output
 
