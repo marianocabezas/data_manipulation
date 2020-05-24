@@ -661,7 +661,7 @@ class ResNConv3dBlock(BaseConv3dBlock):
         else:
             conv = nn.ConvTranspose3d
 
-        self.init = nn.Sequential(
+        self.first = nn.Sequential(
             self.conv(filters_in, filters_out),
             activation(),
             norm(filters_out)
@@ -687,7 +687,7 @@ class ResNConv3dBlock(BaseConv3dBlock):
 
     def forward(self, inputs):
         res = inputs if self.res is None else self.res(inputs)
-        res = self.init(inputs) + res
+        res = self.first(inputs) + res
         for c in self.seq:
             res = c(res) + res
         return res
