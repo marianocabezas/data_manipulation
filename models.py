@@ -686,12 +686,8 @@ class ResNConv3dBlock(BaseConv3dBlock):
         ])
 
     def forward(self, inputs):
-        if self.res is None:
-            print('None')
-            res = self.init(inputs) + inputs
-        else:
-            print(self.res)
-            res = self.init(inputs) + self.res(inputs)
+        res = inputs if self.res is None else self.res(inputs)
+        res = self.init(inputs) + res
         for c in self.seq:
             res = c(res) + res
         return res
