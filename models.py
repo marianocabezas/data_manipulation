@@ -127,8 +127,6 @@ class BaseModel(nn.Module):
                 ]
                 accs.append([a.tolist() for a in batch_accs])
 
-            torch.cuda.empty_cache()
-
             # It's important to compute the global loss in both cases.
             loss_value = batch_loss.tolist()
             losses.append(loss_value)
@@ -143,6 +141,8 @@ class BaseModel(nn.Module):
 
         # Mean loss of the global loss (we don't need the loss for each batch).
         mean_loss = np.mean(losses)
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
 
         if train:
             return mean_loss
