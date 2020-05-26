@@ -109,7 +109,7 @@ class BaseModel(nn.Module):
                 if self.training:
                     batch_loss.backward()
                     self.optimizer_alg.step()
-                self.batch_update(len(data))
+                    self.batch_update(len(data))
 
             else:
                 # Validation losses (applied to the validation data)
