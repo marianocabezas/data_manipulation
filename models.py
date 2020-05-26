@@ -109,6 +109,7 @@ class BaseModel(nn.Module):
                 if self.training:
                     batch_loss.backward()
                     self.optimizer_alg.step()
+                self.batch_update(len(data))
 
             else:
                 # Validation losses (applied to the validation data)
@@ -345,6 +346,15 @@ class BaseModel(nn.Module):
         Callback function to update something on the model after the epoch
         is finished. To be reimplemented if necessary.
         :param epochs: Maximum number of epochs
+        :return: Nothing.
+        """
+        return None
+
+    def batch_update(self, batches):
+        """
+        Callback function to update something on the model after the batch
+        is finished. To be reimplemented if necessary.
+        :param batches: Maximum number of epochs
         :return: Nothing.
         """
         return None
