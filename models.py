@@ -8,6 +8,18 @@ import numpy as np
 from .utils import time_to_string
 
 
+def gumbel_softmax(logits, temperature=1.0, eps=1e-20, dim=1):
+    # From E. Jang, S. Gu, B, Poole. "Categorical reparameterization with
+    # Gumbel-Softmax". arXiv 1611.01144v5 - 2017
+    # We sample g ~ Gumbel(0, 1) distribution:
+    # u ~ Uniform(0, 1)
+    # g = - log(-log(u))
+    u = torch.tensor(torch.rand(logits.shape)).to(logits.device)
+    g = - torch.log(-torch.log(u + eps) + eps)
+    y = logits + g
+    return torch.softmax(y / temperature, dim=dim)
+
+
 class BaseModel(nn.Module):
     """"
     This is the baseline model to be used for any of my networks. The idea
