@@ -15,7 +15,7 @@ def gumbel_softmax(logits, temperature=1.0, eps=1e-20, dim=1):
     # u ~ Uniform(0, 1)
     # g = - log(-log(u))
     u = torch.clamp(torch.rand(logits.shape), eps).to(logits.device)
-    g = - torch.log(- torch.clamp(torch.log(u), eps))
+    g = - torch.log(torch.clamp(- torch.log(u), eps))
     y = logits + g
     return torch.softmax(y / temperature, dim=dim)
 
