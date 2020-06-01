@@ -14,8 +14,8 @@ def gumbel_softmax(logits, temperature=1.0, eps=1e-20, dim=1):
     # We sample g ~ Gumbel(0, 1) distribution:
     # u ~ Uniform(0, 1)
     # g = - log(-log(u))
-    u = torch.tensor(torch.rand(logits.shape)).to(logits.device)
-    g = - torch.log(-torch.log(u + eps) + eps)
+    u = torch.clamp(torch.rand(logits.shape), eps).to(logits.device)
+    g = - torch.log(torch.clamp(- torch.log(u), eps))
     y = logits + g
     return torch.softmax(y / temperature, dim=dim)
 
@@ -483,6 +483,7 @@ class Autoencoder(BaseModel):
         self.pooling = pooling
         self.device = device
         self.dropout = dropout
+        self.filters = conv_filters
 
         conv_in, conv_out, deconv_in, deconv_out = block.compute_filters(
             n_inputs, conv_filters
