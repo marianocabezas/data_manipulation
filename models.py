@@ -483,6 +483,7 @@ class Autoencoder(BaseModel):
         self.pooling = pooling
         self.device = device
         self.dropout = dropout
+        self.filters = conv_filters
 
         conv_in, conv_out, deconv_in, deconv_out = block.compute_filters(
             n_inputs, conv_filters
