@@ -532,7 +532,7 @@ class Autoencoder(BaseModel):
             ])
             self.gates_out = None
 
-    def forward(self, input_s, keepfeat=False):
+    def encode(self, input_s):
         # We need to keep track of the convolutional outputs, for the skip
         # connections.
         down_inputs = []
@@ -549,8 +549,9 @@ class Autoencoder(BaseModel):
         self.u.to(self.device)
         input_s = F.dropout3d(self.u(input_s), self.dropout, self.training)
 
-        features = down_inputs + [input_s] if keepfeat else []
+        return down_inputs, input_s
 
+    def decode(self, input_s, down_inputs):
         for d, i in zip(self.up, down_inputs[::-1]):
             d.to(self.device)
             # Remember that pooling is optional
@@ -571,6 +572,15 @@ class Autoencoder(BaseModel):
                     self.dropout,
                     self.training
                 )
+
+        return input_s
+
+    def forward(self, input_s, keepfeat=False):
+        down_inputs, input_s = self.encode(input_s)
+
+        features = down_inputs + [input_s] if keepfeat else []
+
+        input_s = self.decode(input_s, down_inputs)
 
         output = (input_s, features) if keepfeat else input_s
 
