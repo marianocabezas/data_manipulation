@@ -678,7 +678,6 @@ class ResConv3dBlock(BaseConv3dBlock):
 
     def forward(self, inputs):
         res = inputs if self.res is None else self.res(inputs)
-        print(self.conv(inputs).shape, res.shape, inputs.shape)
         return self.end_seq(self.conv(inputs) + res)
 
 
