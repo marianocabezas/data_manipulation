@@ -1,4 +1,3 @@
-import math
 import torch
 from torch.nn import functional as F
 
@@ -288,11 +287,3 @@ def normalised_xcor_loss(var_x, var_y):
         :return: A tensor with the loss
     """
     return 1. - normalised_xcor(var_x, var_y)
-
-
-def weighted_mse(var_x, var_y, normal):
-    num = torch.exp(- 0.5 * normal * normal)
-    den = torch.rsqrt(torch.tensor(2 * math.pi)).to(normal.device)
-    mask = 1. - num * den
-    diff = var_y - var_x
-    return torch.mean(diff * diff * mask)
