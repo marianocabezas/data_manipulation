@@ -421,6 +421,22 @@ class BaseModel(nn.Module):
         print('\033[K', end='', flush=True)
         print(batch_s, end='\r', flush=True)
 
+    def freeze(self):
+        """
+        Method to freeze all the network parameters.
+        :return: None
+        """
+        for param in self.parameters():
+            param.requires_grad = False
+
+    def unfreeze(self):
+        """
+        Method to unfreeze all the network parameters.
+        :return: None
+        """
+        for param in self.parameters():
+            param.requires_grad = True
+
     def save_model(self, net_name):
         torch.save(self.state_dict(), net_name)
 
