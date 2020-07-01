@@ -489,8 +489,6 @@ class Autoencoder(BaseModel):
         # Init
         if norm is None:
             norm = partial(lambda ch_in: nn.Sequential())
-        if activation is None:
-            activation = nn.ReLU
         if block is None:
             block = Conv3dBlock
         block_partial = partial(
@@ -620,6 +618,10 @@ class BaseConv3dBlock(BaseModel):
         return self.conv(inputs)
 
     @staticmethod
+    def default_activation(n_filters):
+        return nn.ReLU()
+
+    @staticmethod
     def compute_filters(n_inputs, conv_filters):
         conv_in = [n_inputs] + conv_filters[:-2]
         conv_out = conv_filters[:-1]
@@ -636,10 +638,11 @@ class Conv3dBlock(BaseConv3dBlock):
             kernel=3, norm=None, activation=None, inv=False
     ):
         super().__init__(filters_in, filters_out, kernel, inv)
-
+        if activation is None:
+            activation = self.default_activation
         self.block = nn.Sequential(
             self.conv(filters_in, filters_out),
-            activation(),
+            activation(filters_out),
             norm(filters_out)
         )
 
@@ -653,13 +656,14 @@ class DoubleConv3dBlock(BaseConv3dBlock):
             kernel=3, norm=None, activation=None, inv=False
     ):
         super().__init__(filters_in, filters_out, kernel, inv)
-
+        if activation is None:
+            activation = self.default_activation
         self.block = nn.Sequential(
             self.conv(filters_in, filters_out),
-            activation(),
+            activation(filters_out),
             norm(filters_out),
             self.conv(filters_out, filters_out),
-            activation(),
+            activation(filters_out),
             norm(filters_out)
         )
 
@@ -673,6 +677,8 @@ class ResConv3dBlock(BaseConv3dBlock):
             kernel=3, norm=None, activation=None, inv=False
     ):
         super().__init__(filters_in, filters_out, kernel, inv)
+        if activation is None:
+            activation = self.default_activation
         if not inv:
             conv = nn.Conv3d
         else:
@@ -688,7 +694,7 @@ class ResConv3dBlock(BaseConv3dBlock):
             self.res = None
 
         self.end_seq = nn.Sequential(
-            activation(),
+            activation(filters_out),
             norm(filters_out)
         )
 
@@ -703,6 +709,8 @@ class ResNConv3dBlock(BaseConv3dBlock):
             kernel=3, norm=None, activation=None, inv=False
     ):
         super().__init__(filters_in, filters_out, kernel, inv)
+        if activation is None:
+            activation = self.default_activation
         if n_conv < 2:
             n_conv = 2
         if not inv:
@@ -712,14 +720,14 @@ class ResNConv3dBlock(BaseConv3dBlock):
 
         self.first = nn.Sequential(
             self.conv(filters_in, filters_out),
-            activation(),
+            activation(filters_out),
             norm(filters_out)
         )
 
         if filters_in != filters_out:
             self.res = nn.Sequential(
                 conv(filters_in, filters_out, 1),
-                activation(),
+                activation(filters_out),
                 norm(filters_out)
             )
         else:
@@ -728,7 +736,7 @@ class ResNConv3dBlock(BaseConv3dBlock):
         self.seq = nn.ModuleList([
             nn.Sequential(
                 self.conv(filters_out, filters_out),
-                activation(),
+                activation(filters_out),
                 norm(filters_out)
             )
             for _ in range(n_conv - 1)
@@ -748,6 +756,8 @@ class Gated3dBlock(BaseConv3dBlock):
             kernel=3, norm=None, activation=None, inv=False
     ):
         super().__init__(filters_in, filters_out, kernel, inv)
+        if activation is None:
+            activation = self.default_activation
         if not inv:
             conv = nn.Conv3d
         else:
@@ -759,7 +769,7 @@ class Gated3dBlock(BaseConv3dBlock):
 
         self.end_seq = nn.Sequential(
             self.conv(filters_in, filters_out),
-            activation(),
+            activation(filters_out),
         )
         self.norm = norm(filters_out)
 
