@@ -308,3 +308,51 @@ class SmoothingLayer(nn.Module):
         smoothed_x = conv_f[dims - 1](x, final_kernel, padding=padding)
 
         return smoothed_x
+
+
+class Sine3DLayer(nn.Module):
+    """
+    Sine activation based on:
+    Vincent Sitzmann, Julien NP Martel, Alexander W Bergman, David B Lindell,
+    Gordon Wetzstein. "Implicit Neural Representations with Periodic
+    Activation Functions".
+    https://arxiv.org/abs/2006.09661
+    In order to adapt to 3D CNNs, we changed the linear layer with a
+    convolutional one of 1 x 1 x 1. That should keep the properties of the
+    original layer, while reducing considerably the number of parameters and
+    necessary RAM.
+    """
+
+    def __init__(self, in_features, out_features, bias=True,
+                 is_first=False, omega_0=30):
+        super().__init__()
+        self.omega_0 = omega_0
+        self.is_first = is_first
+
+        self.in_features = in_features
+        self.linear = nn.Conv3d(
+            in_features, out_features, kernel_size=1, bias=bias
+        )
+
+        self.init_weights()
+
+    def init_weights(self):
+        with torch.no_grad():
+            if self.is_first:
+                self.linear.weight.uniform_(
+                    -1 / self.in_features,
+                    1 / self.in_features
+                )
+            else:
+                self.linear.weight.uniform_(
+                    -np.sqrt(6 / self.in_features) / self.omega_0,
+                    np.sqrt(6 / self.in_features) / self.omega_0
+                )
+
+    def forward(self, input):
+        return torch.sin(self.omega_0 * self.linear(input))
+
+    def forward_with_intermediate(self, input):
+        # For visualization of activation distributions
+        intermediate = self.omega_0 * self.linear(input)
+        return torch.sin(intermediate), intermediate

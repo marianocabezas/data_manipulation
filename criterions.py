@@ -55,6 +55,10 @@ def gradient(tensor):
     return torch.cat(gradients, dim=1)
 
 
+def wasserstein1(fake, real):
+    return real.mean() - fake.mean()
+
+
 """
 Binary losses
 """
