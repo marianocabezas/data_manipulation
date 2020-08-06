@@ -314,7 +314,7 @@ def itkrigid(
     initial_tf = SItk.CenteredTransformInitializer(
         fixed_float32,
         moving_float32,
-        SItk.VersorRigid3DTransform(),
+        SItk.Euler3DTransform(),
         SItk.CenteredTransformInitializerFilter.MOMENTS
     )
 
