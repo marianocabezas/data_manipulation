@@ -512,7 +512,7 @@ def itkaffine(
     final_tf = SItk.Transform(optimized_tf)
     # final_tf.AddTransform(initial_tf)
 
-    return final_tf
+    return optimized_tf
 
 
 def itksubtraction(fixed, moving, path=None, name=None, verbose=1):
