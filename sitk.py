@@ -445,7 +445,6 @@ def itkaffine(
     fixed_float32 = SItk.Cast(fixed, cast)
     moving_float32 = SItk.Cast(moving, cast)
     optimized_tf = SItk.AffineTransform(3)
-    optimized_tf.SetCenter(initial_tf.GetCenter())
     optimized_tf.SetMatrix(initial_tf.GetMatrix())
 
     ''' Registration parameters '''
