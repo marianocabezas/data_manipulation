@@ -502,7 +502,7 @@ def itkaffine(
             lambda: print_current(registration, optimized_tf)
         )
 
-    # registration.SetMovingInitialTransform(initial_tf)
+    registration.SetMovingInitialTransform(initial_tf)
     registration.SetInitialTransform(optimized_tf)
 
     registration.Execute(fixed_float32, moving_float32)
@@ -510,7 +510,7 @@ def itkaffine(
         print('\033[KRegistration finished')
 
     final_tf = SItk.Transform(optimized_tf)
-    # final_tf.AddTransform(initial_tf)
+    final_tf.AddTransform(initial_tf)
 
     return final_tf
 
