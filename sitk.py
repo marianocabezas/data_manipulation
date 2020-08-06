@@ -445,6 +445,8 @@ def itkaffine(
     fixed_float32 = SItk.Cast(fixed, cast)
     moving_float32 = SItk.Cast(moving, cast)
     optimized_tf = SItk.AffineTransform(3)
+    optimized_tf.SetCenter(initial_tf.GetCenter())
+    optimized_tf.SetMatrix(initial_tf.GetMatrix())
 
     ''' Registration parameters '''
     registration = SItk.ImageRegistrationMethod()
@@ -504,17 +506,18 @@ def itkaffine(
             lambda: print_current(registration, optimized_tf)
         )
 
-    registration.SetMovingInitialTransform(initial_tf)
+    # registration.SetMovingInitialTransform(initial_tf)
     registration.SetInitialTransform(optimized_tf)
 
     registration.Execute(fixed_float32, moving_float32)
     if verbose > 0:
         print('\033[KRegistration finished')
 
-    final_tf = SItk.Transform(optimized_tf)
-    final_tf.AddTransform(initial_tf)
-
-    return final_tf
+    # final_tf = SItk.Transform(optimized_tf)
+    # final_tf.AddTransform(initial_tf)
+    #
+    # return final_tf
+    return optimized_tf
 
 
 def itksubtraction(fixed, moving, path=None, name=None, verbose=1):
