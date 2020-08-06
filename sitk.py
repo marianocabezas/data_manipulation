@@ -502,8 +502,8 @@ def itkaffine(
             lambda: print_current(registration, optimized_tf)
         )
 
-    registration.SetMovingInitialTransform(initial_tf)
-    # registration.SetInitialTransform(optimized_tf)
+    # registration.SetMovingInitialTransform(initial_tf)
+    registration.SetInitialTransform(optimized_tf)
 
     registration.Execute(fixed_float32, moving_float32)
     if verbose > 0:
@@ -512,7 +512,7 @@ def itkaffine(
     final_tf = SItk.Transform(optimized_tf)
     # final_tf.AddTransform(initial_tf)
 
-    return optimized_tf
+    return final_tf
 
 
 def itksubtraction(fixed, moving, path=None, name=None, verbose=1):
