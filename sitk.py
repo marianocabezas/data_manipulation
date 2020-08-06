@@ -436,7 +436,9 @@ def itkaffine(
     elif isinstance(moving, np.ndarray):
         moving = SItk.GetImageFromArray(moving)
     if initial_tf is None:
-        initial_tf = itkrigid(fixed, moving, name, verbose=verbose)
+        initial_tf = itkrigid(
+            fixed, moving, name, fixed_mask, moving_mask, verbose=verbose
+        )
 
     if verbose > 0:
         print('Affine registration')
