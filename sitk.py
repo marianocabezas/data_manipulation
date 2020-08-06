@@ -502,7 +502,7 @@ def itkaffine(
             lambda: print_current(registration, optimized_tf)
         )
 
-    # registration.SetMovingInitialTransform(initial_tf)
+    registration.SetMovingInitialTransform(initial_tf)
     registration.SetInitialTransform(optimized_tf)
 
     registration.Execute(fixed_float32, moving_float32)
