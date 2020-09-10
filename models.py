@@ -521,7 +521,7 @@ class Autoencoder(BaseModel):
         # channels for both outputs. That basically means that we are
         # concatenating with the skip connection, and not suming.
         self.up = nn.ModuleList([
-            block_partial(f_in, f_out, inv=True) for f_in, f_out in zip(
+            block_partial(f_in, f_out) for f_in, f_out in zip(
                 deconv_in, deconv_out
             )
         ])
