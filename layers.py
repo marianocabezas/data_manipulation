@@ -356,3 +356,31 @@ class Sine3DLayer(nn.Module):
         # For visualization of activation distributions
         intermediate = self.omega_0 * self.linear(input)
         return torch.sin(intermediate), intermediate
+
+
+class AttentionGate3D(nn.Module):
+    """
+    Attention gade block based on
+    Jo Schlemper, Ozann Oktay, Michiel Schaap, Mattias Heinrich, Bernhard
+    Kainz, Ben Glocker, Daniel Rueckert. "Attention gated networks: Learning
+    to leverage salient regions in medical images"
+    https://doi.org/10.1016/j.media.2019.01.012
+    """
+
+    def __init__(
+            self, x_features, g_features, int_features, regions=1,
+            sigma2=torch.sigmoid
+    ):
+        super().__init__()
+        self.conv_g = nn.Conv3d(g_features, int_features, 1)
+        self.conv_x = nn.Conv3d(x_features, int_features, 1)
+        self.conv_phi = nn.Conv3d(int_features, regions, 1)
+        self.sigma2 = sigma2
+
+    def forward(self, x, g):
+        g_emb = self.conv_g(g)
+        x_emb = F.interpolate(self.conv_x(x), size=g_emb.size()[2:])
+        phi_emb = self.conv_phi(F.relu(g_emb + x_emb))
+        alpha = F.interpolate(self.sigma2(phi_emb), size=x.size[2:])
+
+        return x * alpha
