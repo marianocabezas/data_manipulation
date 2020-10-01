@@ -1,4 +1,5 @@
 from operator import mul
+from functools import partial
 import torch
 import itertools
 from functools import reduce
@@ -384,3 +385,39 @@ class AttentionGate3D(nn.Module):
         alpha = F.interpolate(self.sigma2(phi_emb), size=x.size[2:])
 
         return x * alpha
+
+
+class SelfAttention3D(nn.Module):
+    """
+    Non-local self-attention block based on
+    X. Wang, R. Girshick, A.Gupta, K. He "Non-local Neural Networks"
+    https://arxiv.org/abs/1711.07971
+    """
+
+    def __init__(
+            self, in_features, att_features, additive=True,
+            norm=partial(torch.softmax, dim=1)
+    ):
+        super().__init__()
+        self.conv_theta = nn.Conv3d(in_features, att_features, 1)
+        self.conv_phi = nn.Conv3d(in_features, att_features, 1)
+        self.conv_g = nn.Conv3d(in_features, att_features, 1)
+        self.conv_final = nn.Conv3d(att_features, in_features, 1)
+        self.norm = norm
+        self.att_feat = att_features
+        self.additive = additive
+
+    def forward(self, x, g):
+        theta = self.conv_theta(x).view(x.shape[2] + (-1,)).transpose(1, 2)
+        phi = self.conv_phi(x).view(x.shape[2] + (-1,))
+        g = self.conv_g(x).view(x.shape[2] + (-1,))
+
+        att = torch.matmul(theta, phi).flatten(1)
+        att_map = self.norm(att).view(self.att_feat, self.att_feat)
+        self_att = self.conv_final(torch.matmul(g, att_map))
+
+        if self.additive:
+            z = self_att + x
+        else:
+            z = self_att * x
+        return z
