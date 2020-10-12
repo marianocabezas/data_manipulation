@@ -411,6 +411,7 @@ class SelfAttention3D(nn.Module):
         self.additive = additive
 
     def forward(self, x, attention=False):
+        print(x.shape)
         theta = self.conv_theta(x).view((x.shape[2], -1)).transpose(1, 2)
         phi = self.conv_phi(x).view((x.shape[2], -1))
         g = self.conv_g(x).view((x.shape[2], -1))
