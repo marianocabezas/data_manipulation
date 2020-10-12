@@ -413,7 +413,7 @@ class SelfAttention3D(nn.Module):
     def forward(self, x, attention=False):
         theta = self.conv_theta(x).view(x.shape[:2] + (-1,)).transpose(0, 1)
         phi = self.conv_phi(x).view(x.shape[:2] + (-1,))
-        g = self.conv_g(x).view(x.shape[:2] + (-1))
+        g = self.conv_g(x).view(x.shape[:2] + (-1,))
 
         att = torch.matmul(theta, phi).flatten(1)
         att_map = self.norm(att).view(x.shape[0], self.att_feat, self.att_feat)
