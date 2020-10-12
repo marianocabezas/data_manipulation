@@ -407,7 +407,6 @@ class SelfAttention3D(nn.Module):
         self.conv_g = nn.Conv3d(in_features, att_features, 1)
         self.conv_final = nn.Conv3d(att_features, in_features, 1)
         self.norm = norm
-        self.att_feat = att_features
         self.additive = additive
 
     def forward(self, x, attention=False):
@@ -415,10 +414,8 @@ class SelfAttention3D(nn.Module):
         phi = self.conv_phi(x).view(x.shape[:2] + (-1,))
         g = self.conv_g(x).view(x.shape[:2] + (-1,))
 
-        print(theta.shape, phi.shape, g.shape)
-
         att = torch.matmul(theta, phi).flatten(1)
-        att_map = self.norm(att).view(x.shape[0], self.att_feat, self.att_feat)
+        att_map = self.norm(att).view(x.shape[0], g.shape[2], g.shape[2])
         self_att = self.conv_final(torch.matmul(g, att_map)).view(x.shape)
 
         if self.additive:
