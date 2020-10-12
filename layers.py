@@ -378,13 +378,16 @@ class AttentionGate3D(nn.Module):
         self.conv_phi = nn.Conv3d(int_features, regions, 1)
         self.sigma2 = sigma2
 
-    def forward(self, x, g):
+    def forward(self, x, g, attention=False):
         g_emb = self.conv_g(g)
         x_emb = F.interpolate(self.conv_x(x), size=g_emb.size()[2:])
         phi_emb = self.conv_phi(F.relu(g_emb + x_emb))
         alpha = F.interpolate(self.sigma2(phi_emb), size=x.size[2:])
 
-        return x * alpha
+        if attention:
+            return x * alpha, alpha
+        else:
+            return x * alpha
 
 
 class SelfAttention3D(nn.Module):
@@ -407,7 +410,7 @@ class SelfAttention3D(nn.Module):
         self.att_feat = att_features
         self.additive = additive
 
-    def forward(self, x, g):
+    def forward(self, x, g, attention=False):
         theta = self.conv_theta(x).view(x.shape[2] + (-1,)).transpose(1, 2)
         phi = self.conv_phi(x).view(x.shape[2] + (-1,))
         g = self.conv_g(x).view(x.shape[2] + (-1,))
@@ -420,4 +423,8 @@ class SelfAttention3D(nn.Module):
             z = self_att + x
         else:
             z = self_att * x
-        return z
+
+        if attention:
+            return z, self_att
+        else:
+            return z
