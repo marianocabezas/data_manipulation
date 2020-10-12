@@ -382,7 +382,7 @@ class AttentionGate3D(nn.Module):
         g_emb = self.conv_g(g)
         x_emb = F.interpolate(self.conv_x(x), size=g_emb.size()[2:])
         phi_emb = self.conv_phi(F.relu(g_emb + x_emb))
-        alpha = F.interpolate(self.sigma2(phi_emb), size=x.size[2:])
+        alpha = F.interpolate(self.sigma2(phi_emb), size=x.size()[2:])
 
         if attention:
             return x * alpha, alpha
