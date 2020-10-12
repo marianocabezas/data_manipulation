@@ -415,8 +415,8 @@ class SelfAttention3D(nn.Module):
         g = self.conv_g(x).view(x.shape[:2] + (-1,))
 
         att = torch.matmul(theta, phi)
-        att_map = self.norm(att.flatten(1)).view(att.shape)
-        self_att = self.conv_final(torch.matmul(g, att_map)).view(x.shape)
+        att_map = self.norm(att.flatten(1)).view_as(att)
+        self_att = self.conv_final(torch.matmul(g, att_map).view_as(x))
 
         if self.additive:
             z = self_att + x
