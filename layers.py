@@ -415,6 +415,8 @@ class SelfAttention3D(nn.Module):
         phi = self.conv_phi(x).view(x.shape[:2] + (-1,))
         g = self.conv_g(x).view(x.shape[:2] + (-1,))
 
+        print(theta.shape, phi.shape, g.shape)
+
         att = torch.matmul(theta, phi).flatten(1)
         att_map = self.norm(att).view(x.shape[0], self.att_feat, self.att_feat)
         self_att = self.conv_final(torch.matmul(g, att_map)).view(x.shape)
