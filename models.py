@@ -627,7 +627,7 @@ class BaseConv3dBlock(BaseModel):
         conv_out = conv_filters[:-1]
         down_out = conv_filters[-2::-1]
         up_out = conv_filters[:0:-1]
-        deconv_in = map(sum, zip(down_out, up_out))
+        deconv_in = list(map(sum, zip(down_out, up_out)))
         deconv_out = down_out
         return conv_in, conv_out, deconv_in, deconv_out
 
