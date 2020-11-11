@@ -457,7 +457,7 @@ class DownsampledSelfAttention3D(nn.Module):
             in_features, in_features, 2, stride=2
         )
         self.upsampler = nn.Conv3d(
-                in_features, in_features, 2, padding=1
+                in_features, in_features, 2,
         )
 
     def forward(self, x, attention=False):
@@ -474,7 +474,10 @@ class DownsampledSelfAttention3D(nn.Module):
             )
         )
         self_att = self.upsampler(
-            F.interpolate(ds_self_att, x.size()[2:])
+            F.pad(
+                F.interpolate(ds_self_att, x.size()[2:]),
+                (0, 1, 0, 1, 0, 1), 'replicate'
+            )
         )
 
         if self.additive:
