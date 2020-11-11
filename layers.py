@@ -484,9 +484,9 @@ class DownsampledSelfAttention3D(nn.Module):
         else:
             z = self_att * x
 
-        return z
+        att_map = torch.sum(self_att, dim=-1).view((1, 1) + x.shape[2:])
 
-        # if attention:
-        #     return z, torch.sigmoid(self.conv_map(self_att))
-        # else:
-        #     return z
+        if attention:
+            return z, att_map
+        else:
+            return z
