@@ -431,3 +431,55 @@ class SelfAttention3D(nn.Module):
             return z, self_att
         else:
             return z
+
+
+class DownsampledSelfAttention3D(nn.Module):
+    """
+    Downsampled non-local self-attention block based on
+    X. Wang, R. Girshick, A.Gupta, K. He "Non-local Neural Networks"
+    https://arxiv.org/abs/1711.07971
+    """
+
+    def __init__(
+            self, in_features, att_features, additive=True,
+            norm=partial(torch.softmax, dim=1)
+    ):
+        super().__init__()
+        self.conv_theta = nn.Conv3d(in_features, att_features, 1)
+        self.conv_phi = nn.Conv3d(in_features, att_features, 1)
+        self.conv_g = nn.Conv3d(in_features, att_features, 1)
+        self.conv_final = nn.Conv3d(att_features, in_features, 1)
+        self.norm = norm
+        self.additive = additive
+
+        self.downsampler = nn.Conv3d(
+            in_features, in_features, 1, stride=2
+        )
+        self.upsampler = nn.ConvTranspose3d(
+            in_features, in_features, 1, stride=2
+        )
+
+    def forward(self, x, attention=False):
+        ds_x = self.downsampler(x)
+        theta = self.conv_theta(ds_x).flatten(2).transpose(1, 2)
+        phi = self.conv_phi(ds_x).flatten(2)
+        g = self.conv_g(ds_x).flatten(2)
+
+        att = torch.matmul(theta, phi)
+        att_map = self.norm(att.flatten(1)).view_as(att)
+        ds_self_att = self.conv_final(
+            torch.matmul(g, att_map).view(
+                (ds_x.shape[0], g.shape[1]) + ds_x.shape[2:]
+            )
+        )
+        self_att = self.upsampler(ds_self_att)
+
+        if self.additive:
+            z = self_att + x
+        else:
+            z = self_att * x
+
+        if attention:
+            return z, self_att
+        else:
+            return z
