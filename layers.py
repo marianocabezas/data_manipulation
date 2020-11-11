@@ -457,7 +457,7 @@ class DownsampledSelfAttention3D(nn.Module):
             in_features, in_features, 2, stride=2
         )
         self.upsampler = nn.Conv3d(
-                in_features, in_features, 2, stride=2
+                in_features, in_features, 2, padding=1
         )
 
     def forward(self, x, attention=False):
