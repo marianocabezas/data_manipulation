@@ -484,7 +484,13 @@ class DownsampledSelfAttention3D(nn.Module):
         else:
             z = self_att * x
 
-        att_map = torch.sum(att_map, dim=-1).view((1, 1) + x.shape[2:])
+        ds_att_map = torch.sum(att_map, dim=-1).view((1, 1) + x.shape[2:])
+        att_map = self.upsampler(
+            F.pad(
+                F.interpolate(ds_att_map, x.size()[2:]),
+                (0, 1, 0, 1, 0, 1), 'replicate'
+            )
+        )
 
         if attention:
             return z, att_map
