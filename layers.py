@@ -449,7 +449,6 @@ class DownsampledSelfAttention3D(nn.Module):
         self.conv_phi = nn.Conv3d(in_features, att_features, 1)
         self.conv_g = nn.Conv3d(in_features, att_features, 1)
         self.conv_final = nn.Conv3d(att_features, in_features, 1)
-        self.conv_map = nn.Conv3d(in_features, 1, 1)
         self.norm = norm
         self.additive = additive
 
@@ -485,7 +484,9 @@ class DownsampledSelfAttention3D(nn.Module):
         else:
             z = self_att * x
 
-        if attention:
-            return z, torch.sigmoid(self.conv_map(self_att))
-        else:
-            return z
+        return z
+
+        # if attention:
+        #     return z, torch.sigmoid(self.conv_map(self_att))
+        # else:
+        #     return z
