@@ -140,7 +140,7 @@ def newdsc_loss(pred, target, smooth=1e-5, weight=1e6):
     # dsc = num / den
 
     # return num
-    return weight * card_m1 + sum_ak0 - weight * sum_ak1
+    return card_m1 + sum_ak0 - sum_ak1
 
 
 def focal_loss(pred, target, alpha=0.2, gamma=2.0):
