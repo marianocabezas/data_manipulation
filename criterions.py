@@ -129,13 +129,17 @@ def newdsc_loss(pred, target, smooth=1e-5):
     # Ldsc = sum(Ldsc(Aj, Mj)) =
     # = sum(||M1|| + epsilon + sum^M0(ak0j) - sum^M1(ak1j)) /
     # ||M1|| + epsilon + sum(aij)
+    m0 = target == 0
+    m1 = target > 0
+    card_m1 = torch.sum(m1)
+    sum_ak0 = torch.sum(pred[m0])
+    sum_ak1 = torch.sum(pred[m1])
 
     # We'll do the sums / means across the 3D axes to have a value per patch.
     # There is only a class here.
     # DSC = 2 * | pred *union* target | / (| pred | + | target |)
-    reduce_dims = tuple(range(1, len(dims)))
-    num = (2 * torch.sum(pred * target, dim=reduce_dims))
-    den = torch.sum(pred + target, dim=reduce_dims) + smooth
+    num = card_m1 + smooth + sum_ak0 - sum_ak1
+    den = card_m1 + smooth + sum_ak0 + sum_ak1
     dsc_k = num / den
     dsc = 1 - torch.mean(dsc_k)
 
