@@ -99,7 +99,7 @@ def dsc_loss(pred, target, smooth=1e-5):
     return torch.clamp(dsc, 0., 1.)
 
 
-def newdsc_loss(pred, target, smooth=1e-5, weight=100):
+def newdsc_loss(pred, target, smooth=1e-5, weight=1e6):
     """
     Loss function based on a single class DSC metric.
     :param pred: Predicted values. This tensor should have the shape:
@@ -112,6 +112,7 @@ def newdsc_loss(pred, target, smooth=1e-5, weight=100):
        categorical.
     :param smooth: Parameter used to smooth the DSC when there are no positive
      samples.
+    :param weight: Parameter to increase the importance of positive samples.
     :return: The mean DSC for the batch
     """
     # Init
