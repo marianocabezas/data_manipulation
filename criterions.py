@@ -141,8 +141,7 @@ def newdsc_loss(pred, target, smooth=1e-5, weight=1e6):
     # DSC = 2 * | pred *union* target | / (| pred | + | target |)
     num = weight * card_m1 + smooth + sum_ak0 - weight * sum_ak1
     den = weight * card_m1 + smooth + sum_ak0 + weight * sum_ak1
-    dsc_k = num / den
-    dsc = 1 - torch.mean(dsc_k)
+    dsc = num / den
 
     return torch.clamp(dsc, 0., 1.)
 
