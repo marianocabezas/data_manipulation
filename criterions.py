@@ -99,6 +99,49 @@ def dsc_loss(pred, target, smooth=1e-5):
     return torch.clamp(dsc, 0., 1.)
 
 
+def newdsc_loss(pred, target, smooth=1e-5):
+    """
+    Loss function based on a single class DSC metric.
+    :param pred: Predicted values. This tensor should have the shape:
+     [batch_size, data_shape]
+    :param target: Ground truth values. This tensor can have multiple shapes:
+     - [batch_size, data_shape]: This is the expected output since
+       it matches with the predicted tensor.
+     - [batch_size, data_shape]: In this case, the tensor is labeled with
+       values ranging from 0 to n_classes. We need to convert it to
+       categorical.
+    :param smooth: Parameter used to smooth the DSC when there are no positive
+     samples.
+    :return: The mean DSC for the batch
+    """
+    # Init
+    dims = pred.shape
+    # Dimension checks. We want everything to be the same. This a class vs
+    # class comparison.
+    assert target.shape == pred.shape,\
+        'Sizes between predicted and target do not match'
+    target = target.type_as(pred)
+
+    # Mj = Labels of patch j / mij = Label of voxel i from patch j
+    # Aj = prediction of patch j / aij = Prediction of voxel i from patch j
+    # M0 = {i: mij = 0}
+    # M1 = {i: mij = 1}
+    # Ldsc = sum(Ldsc(Aj, Mj)) =
+    # = sum(||M1|| + epsilon + sum^M0(ak0j) - sum^M1(ak1j)) /
+    # ||M1|| + epsilon + sum(aij)
+
+    # We'll do the sums / means across the 3D axes to have a value per patch.
+    # There is only a class here.
+    # DSC = 2 * | pred *union* target | / (| pred | + | target |)
+    reduce_dims = tuple(range(1, len(dims)))
+    num = (2 * torch.sum(pred * target, dim=reduce_dims))
+    den = torch.sum(pred + target, dim=reduce_dims) + smooth
+    dsc_k = num / den
+    dsc = 1 - torch.mean(dsc_k)
+
+    return torch.clamp(dsc, 0., 1.)
+
+
 def focal_loss(pred, target, alpha=0.2, gamma=2.0):
     """
     Function to compute the focal loss based on:
