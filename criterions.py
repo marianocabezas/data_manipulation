@@ -113,10 +113,9 @@ def newdsc_loss(pred, target, smooth=1e-5, weight=1e6):
     :param smooth: Parameter used to smooth the DSC when there are no positive
      samples.
     :param weight: Parameter to increase the importance of positive samples.
-    :return: The mean DSC for the batch
+    :return: The DSC loss for the batch
     """
     # Init
-    dims = pred.shape
     # Dimension checks. We want everything to be the same. This a class vs
     # class comparison.
     assert target.shape == pred.shape,\
@@ -135,6 +134,8 @@ def newdsc_loss(pred, target, smooth=1e-5, weight=1e6):
     card_m1 = torch.sum(m1)
     sum_ak0 = torch.sum(pred[m0])
     sum_ak1 = torch.sum(pred[m1])
+
+    print(card_m1, card_m1 * weight, torch.sum(m0), sum_ak0, sum_ak1)
 
     # We'll do the sums / means across the 3D axes to have a value per patch.
     # There is only a class here.
