@@ -91,7 +91,7 @@ def dsc_loss(pred, target, smooth=1e-5):
     # There is only a class here.
     # DSC = 2 * | pred *union* target | / (| pred | + | target |)
     reduce_dims = tuple(range(1, len(dims)))
-    num = (2 * torch.sum(pred * target, dim=reduce_dims)) + smooth
+    num = (2 * torch.sum(pred * target, dim=reduce_dims))
     den = torch.sum(pred + target, dim=reduce_dims) + smooth
     dsc_k = num / den
     dsc = 1 - torch.mean(dsc_k)
