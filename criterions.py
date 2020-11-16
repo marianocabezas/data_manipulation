@@ -135,11 +135,12 @@ def newdsc_loss(pred, target, smooth=1e-5, weight=1e6):
     sum_ak0 = torch.sum(pred[m0])
     sum_ak1 = torch.sum(pred[m1])
 
-    num = weight * card_m1 + smooth + sum_ak0 - weight * sum_ak1
-    den = weight * card_m1 + smooth + sum_ak0 + weight * sum_ak1
-    dsc = num / den
+    # num = weight * card_m1 + smooth + sum_ak0 - weight * sum_ak1
+    # den = weight * card_m1 + smooth + sum_ak0 + weight * sum_ak1
+    # dsc = num / den
 
-    return torch.clamp(dsc, 0., 1.)
+    # return num
+    return weight * card_m1 + sum_ak0 - weight * sum_ak1
 
 
 def focal_loss(pred, target, alpha=0.2, gamma=2.0):
