@@ -126,20 +126,15 @@ def newdsc_loss(pred, target, smooth=1e-5, weight=1e6):
     # Aj = prediction of patch j / aij = Prediction of voxel i from patch j
     # M0 = {i: mij = 0}
     # M1 = {i: mij = 1}
-    # Ldsc = sum(Ldsc(Aj, Mj)) =
-    # = sum(||M1|| + epsilon + sum^M0(ak0j) - sum^M1(ak1j)) /
-    # ||M1|| + epsilon + sum(aij)
+    # Ldsc = Ldsc(A, M)) =
+    # = sum(||M1|| + epsilon + sum^M0(ak0) - sum^M1(ak1)) /
+    # ||M1|| + epsilon + sum(ai)
     m0 = target == 0
     m1 = target > 0
     card_m1 = torch.sum(m1)
     sum_ak0 = torch.sum(pred[m0])
     sum_ak1 = torch.sum(pred[m1])
 
-    print(card_m1, card_m1 * weight, torch.sum(m0), sum_ak0, sum_ak1)
-
-    # We'll do the sums / means across the 3D axes to have a value per patch.
-    # There is only a class here.
-    # DSC = 2 * | pred *union* target | / (| pred | + | target |)
     num = weight * card_m1 + smooth + sum_ak0 - weight * sum_ak1
     den = weight * card_m1 + smooth + sum_ak0 + weight * sum_ak1
     dsc = num / den
