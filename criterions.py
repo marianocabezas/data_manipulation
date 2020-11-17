@@ -137,7 +137,7 @@ def newdsc_loss(pred, target, smooth=1e-5, weight=1):
 
     # print(card_m1, sum_ak1, torch.sum(m0), sum_ak0)
 
-    num = weight * card_m1 + smooth + sum_ak0 - weight * sum_ak1
+    num = weight * card_m1 + sum_ak0 - weight * sum_ak1
     den = weight * card_m1 + smooth + sum_ak0 + weight * sum_ak1
     dsc = num / den
 
