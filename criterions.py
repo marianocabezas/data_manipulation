@@ -99,7 +99,7 @@ def dsc_loss(pred, target, smooth=1e-5):
     return torch.clamp(dsc, 0., 1.)
 
 
-def newdsc_loss(pred, target, smooth=1e-5, weight=1e2):
+def newdsc_loss(pred, target, smooth=1e-5, weight=1):
     """
     Loss function based on a single class DSC metric.
     :param pred: Predicted values. This tensor should have the shape:
