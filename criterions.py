@@ -99,7 +99,7 @@ def dsc_loss(pred, target, smooth=1e-5):
     return torch.clamp(dsc, 0., 1.)
 
 
-def newdsc_loss(pred, target, smooth=1e-5, weight=1):
+def newdsc_loss(pred, target, smooth=1e-5, weight=1e2):
     """
     Loss function based on a single class DSC metric.
     :param pred: Predicted values. This tensor should have the shape:
@@ -132,13 +132,13 @@ def newdsc_loss(pred, target, smooth=1e-5, weight=1):
     m0 = target == 0
     m1 = target > 0
     card_m1 = torch.sum(m1)
-    sum_ak0 = torch.sum(pred[m0])
+    sum_ak0 = weight * torch.sum(pred[m0])
     sum_ak1 = torch.sum(pred[m1])
 
     # print(card_m1, sum_ak1, torch.sum(m0), sum_ak0)
 
-    num = weight * card_m1 + smooth + sum_ak0 - weight * sum_ak1
-    den = weight * card_m1 + smooth + sum_ak0 + weight * sum_ak1
+    num = card_m1 + smooth + sum_ak0 - sum_ak1
+    den = card_m1 + smooth + sum_ak0 + sum_ak1
     dsc = num / den
 
     return dsc
