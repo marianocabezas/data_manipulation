@@ -373,23 +373,20 @@ def get_normalised_image(
             image_i = image[..., i]
             image_mu = np.mean(image_i[mask_bin])
             image_sigma = np.std(image_i[mask_bin])
-            norm_image = ((image_i - image_mu) / image_sigma).astype(dtype)
             if masked:
-                image_list.append(norm_image * mask_bin.astype(dtype))
-            else:
-                image_list.append(norm_image)
+                image_i = image_i * mask_bin.astype(image.dtype)
+            norm_image = ((image_i - image_mu) / image_sigma).astype(dtype)
+            image_list.append(norm_image)
         output = np.stack(image_list, axis=0)
 
     else:
         # Parameter estimation using the mask provided
         image_mu = np.mean(image[mask_bin])
         image_sigma = np.std(image[mask_bin])
-        norm_image = ((image - image_mu) / image_sigma).astype(dtype)
-
         if masked:
-            output = norm_image * mask_bin.astype(dtype)
-        else:
-            output = norm_image
+            image = image * mask_bin.astype(image.dtype)
+
+        output = ((image - image_mu) / image_sigma).astype(dtype)
 
     return output
 
